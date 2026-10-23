@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-hover: #F6F6F4;
+    --surface-muted: #F1F1EE;
+    --surface-raised: #FFFFFF;
+    --overlay: #D9DBE0;
+    --ink: #1D2433;
+    --ink-muted: #5F6878;
+    --ink-faint: #525B6A;
+    --border: #E4E6EB;
+    --border-strong: #8C94A2;
+    --accent: #FF6154;
+    --accent-strong: #B9281D;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #FFE9E6;
+    --success: #17795A;
+    --success-soft: #DDF3EA;
+    --danger: #B9281D;
+    --danger-soft: #FBE3E0;
+    --disabled-bg: #ECEEF1;
+    --disabled-ink: #525B6A;
+    --skeleton-a: #EEF0F3;
+    --skeleton-b: #E2E5EA;
+    --focus-ring: #D93A2E;
+
+    /* 8 Curated Tokenized Hues for Cover Tiles (Light - All Solid) */
+    --tile-0-bg: #FFE8E5; --tile-0-ink: #C2382B;
+    --tile-1-bg: #EEF2FF; --tile-1-ink: #3730A3;
+    --tile-2-bg: #E6F8F3; --tile-2-ink: #0F6B50;
+    --tile-3-bg: #F5F0FF; --tile-3-ink: #5B21B6;
+    --tile-4-bg: #EBF5FF; --tile-4-ink: #1D4ED8;
+    --tile-5-bg: #EDFBF4; --tile-5-ink: #166534;
+    --tile-6-bg: #FFF4E6; --tile-6-ink: #B45309;
+    --tile-7-bg: #FFEBF2; --tile-7-ink: #9D174D;
+  }
+
+  .dark {
+    --bg: #121417;
+    --surface: #1A1D21;
+    --surface-hover: #21252A;
+    --surface-muted: #16191C;
+    --surface-raised: #252A30;
+    --overlay: #0A0B0D;
+    --ink: #EEF0F3;
+    --ink-muted: #A0A8B4;
+    --ink-faint: #969EAB;
+    --border: #2A2F36;
+    --border-strong: #5A626E;
+    --accent: #FF7468;
+    --accent-strong: #FF7468;
+    --accent-ink: #2A0D0A;
+    --accent-soft: #3A1F1C;
+    --success: #4CC49A;
+    --success-soft: #17332B;
+    --danger: #FF8A7D;
+    --danger-soft: #3A1E1B;
+    --disabled-bg: #22262B;
+    --disabled-ink: #969EAB;
+    --skeleton-a: #1F2328;
+    --skeleton-b: #2A2F36;
+    --focus-ring: #FF7468;
+
+    /* 8 Curated Tokenized Hues for Cover Tiles (Dark - All Solid) */
+    --tile-0-bg: #381E1C; --tile-0-ink: #FF8A7D;
+    --tile-1-bg: #1E2238; --tile-1-ink: #A5B4FC;
+    --tile-2-bg: #152B24; --tile-2-ink: #5EEAD4;
+    --tile-3-bg: #281E38; --tile-3-ink: #C084FC;
+    --tile-4-bg: #16253B; --tile-4-ink: #93C5FD;
+    --tile-5-bg: #14291D; --tile-5-ink: #86EFAC;
+    --tile-6-bg: #332213; --tile-6-ink: #FDBA74;
+    --tile-7-bg: #331622; --tile-7-ink: #F472B6;
+  }
+
+  * {
+    border-color: var(--border);
+    caret-color: var(--accent-strong);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+}
+
+/* Tabular numerals for scores and ranks */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Instant zero-lag theme switching: no universal transitions on theme toggle */
+
+/* ::selection - solid colors only */
+::selection {
+  background-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Scrollbars per theme - solid colors only */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+  border: 2px solid var(--bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
+
+/* Form autofill styling per theme - solid colors only */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset; /* intentional exception */
+  box-shadow: 0 0 0px 1000px var(--surface) inset; /* intentional exception */
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Placeholder text per theme - solid colors only */
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-faint);
+  opacity: 1;
+}
+
+/* Solid skeleton pulse between --skeleton-a and --skeleton-b (zero alpha, zero gradients) */
+@keyframes solid-skeleton-pulse {
+  0%, 100% {
+    background-color: var(--skeleton-a);
+  }
+  50% {
+    background-color: var(--skeleton-b);
+  }
+}
+
+.animate-skeleton {
+  animation: solid-skeleton-pulse 1.6s ease-in-out infinite;
+}
