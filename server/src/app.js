@@ -42,6 +42,7 @@ app.use(helmet({
 
 const allowedOrigins = [
   env.CLIENT_URL,
+  env.CLIENT_URL ? env.CLIENT_URL.replace(/\/$/, '') : null,
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173'
@@ -50,10 +51,25 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
       return callback(null, true);
     }
-    return callback(new Error('Origin blocked by CORS policy.'));
+
+    const cleanOrigin = origin.replace(/\/$/, '');
+
+    // Check if explicitly listed in allowedOrigins
+    const isExplicit = allowedOrigins.some(allowed => cleanOrigin === allowed.replace(/\/$/, ''));
+
+    // Automatically allow deployments on onrender.com, vercel.app, railway.app, or local dev
+    const isCloudHost = /https?:\/\/.*?\.(onrender\.com|vercel\.app|railway\.app|pages\.dev)(:\d+)?$/.test(cleanOrigin);
+    const isLocalhost = /https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(cleanOrigin);
+
+    if (isExplicit || isCloudHost || isLocalhost) {
+      return callback(null, true);
+    }
+
+    // Do not set CORS headers for unauthorized origins
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
