@@ -5,6 +5,14 @@
 ![IdeaPulse Tech Stack](https://img.shields.io/badge/Stack-React_|_Node_|_Express_|_SQLite-6366f1?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-emerald?style=for-the-badge)
 
+**🌐 Live:** [ideapulse-nh93.onrender.com](https://ideapulse-nh93.onrender.com/feed)
+
+## 🎬 Launch Video
+
+[![IdeaPulse launch video: click to watch](docs/media/ideapulse-launch-poster.jpg)](docs/media/ideapulse-launch.mp4)
+
+▶️ **[Watch the launch video (40s, with voiceover)](docs/media/ideapulse-launch.mp4)**
+
 ---
 
 ## 🚀 Key Features
