@@ -10,6 +10,7 @@ import {
   Laptop,
   Plus,
   Shield,
+  Users,
   Menu,
   X,
   ChevronDown,
@@ -369,6 +370,16 @@ export function Navbar({ onOpenCommandPalette }) {
                           Moderation Queue
                         </Link>
                       )}
+                      {isAdmin && (
+                        <Link
+                          to="/admin/waitlist"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center px-3 py-2 rounded-[8px] hover:bg-surface-hover text-accent-strong transition-colors font-medium text-sm"
+                          role="menuitem"
+                        >
+                          Waitlist
+                        </Link>
+                      )}
                     </div>
 
                     <div className="pt-1 border-t border-border">
@@ -460,6 +471,15 @@ export function Navbar({ onOpenCommandPalette }) {
                 className="px-3 py-2.5 text-sm font-medium text-accent-strong hover:bg-surface-hover rounded-[8px] min-h-[44px] flex items-center gap-2"
               >
                 <Shield className="w-4 h-4" /> Moderation
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/admin/waitlist"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 text-sm font-medium text-accent-strong hover:bg-surface-hover rounded-[8px] min-h-[44px] flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" /> Waitlist
               </NavLink>
             )}
             <button

@@ -75,11 +75,15 @@
    - Each idea shows a 0–100 **Demand Score**, the share of voters who would pay, and a willingness-to-pay distribution.
    - Voters can opt in to a **launch waitlist**. Only the creator sees it, and can export it to CSV (with spreadsheet-injection-safe cells).
 
-10. **Content Moderation & Admin Role**:
+10. **Product Waitlist**:
+   - "Join the waitlist" card on the landing page (email, optional name and use case) with honeypot and rate-limit spam protection.
+   - Admin **Waitlist** dashboard (`/admin/waitlist`): total / last 7 days / today, signups-per-day chart, latest signups, and CSV export.
+
+11. **Content Moderation & Admin Role**:
    - Any authenticated user can report an idea with violation reasons.
    - Dedicated **Admin Moderation Hub** (`/admin`) for administrators to inspect reported items, filter by status (`pending`, `resolved`, `dismissed`), resolve reports, or delete infringing content and comments.
 
-11. **Aesthetics & Accessibility**:
+12. **Aesthetics & Accessibility**:
     - Tailored typography pairing: **Plus Jakarta Sans** for headings and **Inter** for clean UI legibility.
     - Full Light and Dark mode with system preference auto-detection and persistence.
     - Sonner toasts for all user actions.

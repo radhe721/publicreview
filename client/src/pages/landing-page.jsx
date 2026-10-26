@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { WaitlistCard } from '@/components/waitlist-card';
 import api from '@/api/client';
 import { IdeaRow } from '@/components/idea-row';
 import { IdeaRowSkeleton } from '@/components/ui/skeleton';
@@ -146,6 +147,8 @@ export function LandingPage() {
             The community's highest-ranked product proposals, scored 1–5 in real time.
           </p>
         </div>
+
+        <WaitlistCard source="landing" />
 
         {/* Section 1: Top Ideas Today (Ranked list up to 10) */}
         <section aria-labelledby="today-heading" className="space-y-4">

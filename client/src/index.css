@@ -28,6 +28,7 @@
     --skeleton-a: #EEF0F3;
     --skeleton-b: #E2E5EA;
     --focus-ring: #D93A2E;
+    --chart-bar: #E8473B; /* validated: dataviz lightness band + 3:1 vs surface */
 
     /* 8 Curated Tokenized Hues for Cover Tiles (Light - All Solid) */
     --tile-0-bg: #FFE8E5; --tile-0-ink: #C2382B;
@@ -65,6 +66,7 @@
     --skeleton-a: #1F2328;
     --skeleton-b: #2A2F36;
     --focus-ring: #FF7468;
+    --chart-bar: #F05A4D;
 
     /* 8 Curated Tokenized Hues for Cover Tiles (Dark - All Solid) */
     --tile-0-bg: #381E1C; --tile-0-ink: #FF8A7D;

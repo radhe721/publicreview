@@ -42,6 +42,7 @@ export default {
           ink: 'var(--accent-ink)',
           soft: 'var(--accent-soft)',
         },
+        'chart-bar': 'var(--chart-bar)',
         success: {
           DEFAULT: 'var(--success)',
           soft: 'var(--success-soft)',

@@ -70,3 +70,12 @@ export const paginationQuerySchema = z.object({
   timeframe: z.string().trim().optional(),
   tag: z.string().trim().optional()
 });
+
+export const waitlistSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Please enter a valid email address').max(100),
+  name: z.string().trim().max(80).optional().nullable(),
+  use_case: z.string().trim().max(300).optional().nullable(),
+  source: z.string().trim().max(40).optional().nullable(),
+  // Honeypot: hidden from people, filled in by bots.
+  website: z.string().max(0, 'Invalid submission').optional()
+});

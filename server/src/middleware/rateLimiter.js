@@ -45,3 +45,14 @@ export const oauthLimiter = rateLimit({
     error: { message: 'Too many sign-in attempts. Please try again later.' }
   }
 });
+
+export const waitlistLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'Too many signups from this network. Please try again later.' }
+  }
+});
