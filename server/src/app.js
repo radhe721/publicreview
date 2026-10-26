@@ -38,11 +38,18 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://*.googletagmanager.com'],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-      connectSrc: ["'self'", ...env.CLIENT_URLS],
+      // Google Analytics 4 beacons
+      connectSrc: [
+        "'self'",
+        ...env.CLIENT_URLS,
+        'https://*.google-analytics.com',
+        'https://*.analytics.google.com',
+        'https://*.googletagmanager.com'
+      ],
       formAction: ["'self'", 'https://accounts.google.com', 'https://github.com'],
       frameAncestors: ["'none'"]
     }
