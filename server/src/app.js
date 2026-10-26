@@ -11,6 +11,7 @@ import { env } from './config/env.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { notFoundHandler, errorHandler } from './middleware/error.js';
 import { requireAuth } from './middleware/auth.js';
+import { csrfProtection, isAllowedOrigin } from './middleware/csrf.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,11 @@ import reportRoutes from './routes/report.routes.js';
 
 export const app = express();
 
+// Behind Render/Railway/Heroku-style proxies, trust the first hop so req.ip and req.protocol are
+// the client's real values. Without this every visitor shares one rate-limit bucket.
+app.set('trust proxy', env.NODE_ENV === 'production' ? 1 : 'loopback');
+app.disable('x-powered-by');
+
 // Security middlewares
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -35,41 +41,19 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-      connectSrc: ["'self'", env.CLIENT_URL, 'https:', 'http:'].filter(Boolean)
+      connectSrc: ["'self'", ...env.CLIENT_URLS],
+      formAction: ["'self'", 'https://accounts.google.com', 'https://github.com'],
+      frameAncestors: ["'none'"]
     }
   }
 }));
 
-const allowedOrigins = [
-  env.CLIENT_URL,
-  env.CLIENT_URL ? env.CLIENT_URL.replace(/\/$/, '') : null,
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173'
-].filter(Boolean);
-
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    const cleanOrigin = origin.replace(/\/$/, '');
-
-    // Check if explicitly listed in allowedOrigins
-    const isExplicit = allowedOrigins.some(allowed => cleanOrigin === allowed.replace(/\/$/, ''));
-
-    // Automatically allow deployments on onrender.com, vercel.app, railway.app, or local dev
-    const isCloudHost = /https?:\/\/.*?\.(onrender\.com|vercel\.app|railway\.app|pages\.dev)(:\d+)?$/.test(cleanOrigin);
-    const isLocalhost = /https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(cleanOrigin);
-
-    if (isExplicit || isCloudHost || isLocalhost) {
-      return callback(null, true);
-    }
-
-    // Do not set CORS headers for unauthorized origins
-    return callback(null, false);
+    // Requests with no Origin (curl, server-to-server, same-origin navigation) need no CORS headers.
+    // Only explicitly configured client origins (CLIENT_URL) may make credentialed requests;
+    // a wildcard like *.vercel.app would let anyone's deployment read users' private data.
+    callback(null, !origin || isAllowedOrigin(origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -78,7 +62,6 @@ app.use(cors({
 
 // Body parsing & cookies
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
 // Request logging in non-test env
@@ -86,8 +69,9 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Global API Rate Limiter
+// Global API Rate Limiter & CSRF protection
 app.use('/api', apiLimiter);
+app.use('/api', csrfProtection);
 
 // Multer upload config for cover images
 const upload = multer({

@@ -10,8 +10,10 @@
 ## 🚀 Key Features
 
 1. **Authentication & Session Security**:
-   - Secure email + password signup & login with bcrypt (10 rounds).
-   - JWT sessions stored exclusively in `httpOnly`, `SameSite` cookies with CSRF and XSS protection.
+   - Secure email + password signup & login with bcrypt (12 rounds, 8+ char passwords, timing-safe).
+   - **Continue with Google / GitHub** (OAuth 2.0 authorization code flow with signed `state`, PKCE for Google, verified emails only).
+   - JWT sessions stored exclusively in `httpOnly` cookies; Origin-checked CSRF protection; strict CORS allowlist.
+   - "Sign out of all devices" revokes every issued session.
    - Protected routes across both frontend and backend.
    - Rate limiting on auth attempts (`express-rate-limit`) and helmet security headers.
 
@@ -60,11 +62,16 @@
    - Aggregated metrics: **Submitted Ideas Count**, **Ratings Given Count**, and **Average Score Received** across all submitted ideas.
    - Tabbed views for "Submitted Ideas" and "Ratings Given".
 
-9. **Content Moderation & Admin Role**:
+9. **Market Demand Validation**:
+   - Beyond star ratings, voters answer *"Would you use this?"*: **Not for me**, **I'd try it**, or **I'd pay for it**, with an optional monthly price band.
+   - Each idea shows a 0–100 **Demand Score**, the share of voters who would pay, and a willingness-to-pay distribution.
+   - Voters can opt in to a **launch waitlist**. Only the creator sees it, and can export it to CSV (with spreadsheet-injection-safe cells).
+
+10. **Content Moderation & Admin Role**:
    - Any authenticated user can report an idea with violation reasons.
    - Dedicated **Admin Moderation Hub** (`/admin`) for administrators to inspect reported items, filter by status (`pending`, `resolved`, `dismissed`), resolve reports, or delete infringing content and comments.
 
-10. **Aesthetics & Accessibility**:
+11. **Aesthetics & Accessibility**:
     - Tailored typography pairing: **Plus Jakarta Sans** for headings and **Inter** for clean UI legibility.
     - Full Light and Dark mode with system preference auto-detection and persistence.
     - Sonner toasts for all user actions.

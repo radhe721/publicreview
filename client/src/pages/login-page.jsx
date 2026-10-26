@@ -6,8 +6,12 @@ import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OAuthButtons, oauthErrorMessage } from '@/components/oauth-buttons';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Demo accounts use a public password, so the shortcut panel is for local development only.
+const SHOW_DEMO_LOGINS = import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_LOGINS === 'true';
 
 const schema = z.object({
   email: z.string().trim().email('Please enter a valid email address'),
@@ -18,7 +22,10 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/feed';
+  const requestedRedirect = searchParams.get('redirect') || '';
+  // Only same-site paths: "//evil.com" or "https://..." would turn this into an open redirect.
+  const redirectPath = /^\/(?![/\\])/.test(requestedRedirect) ? requestedRedirect : '/feed';
+  const oauthError = oauthErrorMessage(searchParams.get('error'));
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +44,6 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-      toast.success('Welcome back!');
       navigate(redirectPath);
     } catch (err) {
       toast.error(err.message || 'Incorrect email or password.');
@@ -69,7 +75,16 @@ export function LoginPage() {
           </p>
         </div>
 
+        {oauthError && (
+          <p role="alert" className="text-xs text-danger bg-danger-soft border border-danger rounded-[8px] px-3 py-2.5">
+            {oauthError}
+          </p>
+        )}
+
+        <OAuthButtons redirectPath={redirectPath} />
+
         {/* 1-Click Demo Logins */}
+        {SHOW_DEMO_LOGINS && (
         <div className="p-3 bg-surface-muted rounded-[8px] border border-border space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted block text-center">
             Demo quick logins
@@ -93,6 +108,7 @@ export function LoginPage() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

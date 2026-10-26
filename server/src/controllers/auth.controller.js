@@ -2,6 +2,11 @@ import bcrypt from 'bcryptjs';
 import db from '../config/db.js';
 import { setAuthCookie, clearAuthCookie } from '../middleware/auth.js';
 
+// Compared against when the email is unknown, so response time doesn't reveal which emails exist.
+const DUMMY_HASH = bcrypt.hashSync('timing-equalizer-not-a-real-password', 10);
+
+const isPasswordHash = (hash) => typeof hash === 'string' && hash.startsWith('$2');
+
 export async function register(req, res, next) {
   try {
     const { name, email, password, bio } = req.body;
@@ -14,8 +19,7 @@ export async function register(req, res, next) {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
+    const password_hash = await bcrypt.hash(password, 12);
 
     // Default avatar
     const avatar_url = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0284c7,0d9488,4f46e5`;
@@ -44,23 +48,18 @@ export async function login(req, res, next) {
     const { email, password } = req.body;
 
     const userWithHash = await db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(email);
-    if (!userWithHash) {
+    const hasPassword = userWithHash && isPasswordHash(userWithHash.password_hash);
+
+    const isMatch = await bcrypt.compare(password, hasPassword ? userWithHash.password_hash : DUMMY_HASH);
+    if (!hasPassword || !isMatch) {
       return res.status(401).json({
         success: false,
         error: { message: 'Invalid email or password.' }
       });
     }
 
-    const isMatch = await bcrypt.compare(password, userWithHash.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Invalid email or password.' }
-      });
-    }
-
-    const { password_hash, ...user } = userWithHash;
-    setAuthCookie(res, user);
+    const { password_hash, token_version, ...user } = userWithHash;
+    setAuthCookie(res, userWithHash);
 
     res.json({
       success: true,
@@ -77,6 +76,20 @@ export function logout(req, res) {
     success: true,
     message: 'Logged out successfully.'
   });
+}
+
+// Signs the user out on every device by invalidating all previously issued tokens.
+export async function logoutAll(req, res, next) {
+  try {
+    await db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(req.user.id);
+    clearAuthCookie(res);
+    res.json({
+      success: true,
+      message: 'Signed out of all devices.'
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function getMe(req, res, next) {

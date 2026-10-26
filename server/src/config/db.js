@@ -8,6 +8,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 function getClientOptions() {
+  // Tests must never touch the real (Turso) database: they create users, ideas and ratings.
+  if (env.NODE_ENV === 'test') {
+    const testDbPath = path.resolve(__dirname, '../db/ideapulse.test.db');
+    return { url: `file:${testDbPath}` };
+  }
+
   if (env.TURSO_DATABASE_URL) {
     return {
       url: env.TURSO_DATABASE_URL,

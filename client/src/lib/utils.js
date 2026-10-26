@@ -27,9 +27,18 @@ export function cn(...inputs) {
   return customTwMerge(clsx(inputs));
 }
 
+// SQLite's CURRENT_TIMESTAMP is UTC but has no zone marker ("2026-01-31 17:00:00"), which
+// browsers would otherwise read as local time and shift by the viewer's UTC offset.
+export function parseDate(dateString) {
+  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(dateString)) {
+    return new Date(`${dateString.replace(' ', 'T')}Z`);
+  }
+  return new Date(dateString);
+}
+
 export function formatDate(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
+  const date = parseDate(dateString);
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -39,7 +48,7 @@ export function formatDate(dateString) {
 
 export function formatRelativeTime(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
+  const date = parseDate(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now - date) / 1000);
 

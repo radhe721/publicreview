@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export function Navbar({ onOpenCommandPalette }) {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout, logoutAll } = useAuth();
   const { theme, resolvedTheme, cycleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -48,6 +48,12 @@ export function Navbar({ onOpenCommandPalette }) {
   const handleLogout = async () => {
     setUserMenuOpen(false);
     await logout();
+    navigate('/');
+  };
+
+  const handleLogoutAll = async () => {
+    setUserMenuOpen(false);
+    await logoutAll();
     navigate('/');
   };
 
@@ -373,6 +379,14 @@ export function Navbar({ onOpenCommandPalette }) {
                         role="menuitem"
                       >
                         Sign out
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogoutAll}
+                        className="w-full text-left px-3 py-2 rounded-[8px] text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors text-xs"
+                        role="menuitem"
+                      >
+                        Sign out of all devices
                       </button>
                     </div>
                   </div>

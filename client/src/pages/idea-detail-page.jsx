@@ -9,6 +9,7 @@ import { AuthorAvatar } from '@/components/ui/author-avatar';
 import { RatingBreakdown } from '@/components/rating-breakdown';
 import { StarRatingWidget } from '@/components/star-rating-widget';
 import { CommentSection } from '@/components/comment-section';
+import { DemandSignalPanel } from '@/components/demand-signal-panel';
 import { ReportModal } from '@/components/report-modal';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Button } from '@/components/ui/button';
@@ -340,6 +341,20 @@ export function IdeaDetailPage() {
                   />
                 </div>
               </div>
+            </section>
+
+            {/* Demand Validation: would people actually use / pay for it? */}
+            <section className="space-y-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                Market Demand
+              </h2>
+              <DemandSignalPanel
+                ideaId={idea.id}
+                ideaTitle={idea.title}
+                isAuthor={isAuthor}
+                isAuthenticated={isAuthenticated}
+                canViewWaitlist={canManage}
+              />
             </section>
           </div>
         )}

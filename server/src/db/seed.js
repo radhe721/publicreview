@@ -1,12 +1,25 @@
 import bcrypt from 'bcryptjs';
 import db from '../config/db.js';
+import { env } from '../config/env.js';
 import { runMigrations } from './migrate.js';
 
 export async function seedDatabase() {
+  // Seeding wipes every table and creates demo accounts with a public password (including an
+  // admin), so it must never run against a real database by accident.
+  const isRemoteOrProd = env.NODE_ENV === 'production' || (env.TURSO_DATABASE_URL && env.NODE_ENV !== 'test');
+  if (isRemoteOrProd && process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+    throw new Error(
+      'Refusing to seed: this would DELETE ALL DATA in a production/remote database and create a demo admin ' +
+      'with a public password. Set ALLOW_DESTRUCTIVE_SEED=true only if you really mean it.'
+    );
+  }
+
   console.log('🌱 Starting database seeding...');
   await runMigrations();
 
   await db.transaction(async (tx) => {
+    await tx.prepare('DELETE FROM demand_signals').run();
+    await tx.prepare('DELETE FROM oauth_accounts').run();
     await tx.prepare('DELETE FROM reports').run();
     await tx.prepare('DELETE FROM comments').run();
     await tx.prepare('DELETE FROM ratings').run();

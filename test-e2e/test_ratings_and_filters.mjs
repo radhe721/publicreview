@@ -246,7 +246,7 @@ const scorecard = await page.$('main');
 assert.ok(scorecard, 'Idea detail page loaded');
 
 // Switch to Ratings tab or find star buttons
-const starButtons = await page.$$('button[role="radio"]');
+const starButtons = await page.$$('[role="radiogroup"]:not([aria-label="Your demand signal"]) button[role="radio"]');
 console.log(`✅ Found ${starButtons.length} interactive rating marks on idea detail for signed-in reviewer.`);
 assert.strictEqual(starButtons.length, 5, 'Must have 5 interactive star rating buttons');
 

@@ -33,3 +33,15 @@ export const loginLimiter = rateLimit({
     error: { message: 'Too many login attempts. Please try again after 15 minutes.' }
   }
 });
+
+// OAuth start + callback are two requests per sign-in, so this budget is a bit larger.
+export const oauthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'Too many sign-in attempts. Please try again later.' }
+  }
+});

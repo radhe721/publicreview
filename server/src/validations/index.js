@@ -3,14 +3,30 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name cannot exceed 50 characters'),
   email: z.string().trim().email('Invalid email address').max(100),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password cannot exceed 72 characters'),
   bio: z.string().max(250).optional()
 });
 
 export const loginSchema = z.object({
-  email: z.string().trim().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required')
+  email: z.string().trim().email('Invalid email address').max(100),
+  password: z.string().min(1, 'Password is required').max(200)
 });
+
+export const oauthProviderSchema = z.object({
+  provider: z.enum(['google', 'github'])
+});
+
+export const demandSignalSchema = z.object({
+  intent: z.enum(['pass', 'maybe', 'would_pay']),
+  price_tier: z.enum(['under_10', '10_to_30', '30_to_100', 'over_100']).optional().nullable(),
+  join_waitlist: z.boolean().optional().default(false)
+}).transform((data) => ({
+  ...data,
+  // A price only makes sense alongside willingness to pay.
+  price_tier: data.intent === 'would_pay' ? (data.price_tier || null) : null,
+  // Nobody who passed on the idea should end up on its waitlist.
+  join_waitlist: data.intent === 'pass' ? false : data.join_waitlist
+}));
 
 export const createIdeaSchema = z.object({
   title: z.string().trim().min(5, 'Title must be at least 5 characters').max(60, 'Title cannot exceed 60 characters'),
@@ -47,7 +63,7 @@ export const updateReportSchema = z.object({
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(50).optional().default(12),
-  search: z.string().trim().optional(),
+  search: z.string().trim().max(100).optional(),
   category: z.string().trim().optional(),
   sort: z.string().trim().optional().default('top'),
   time_window: z.string().trim().optional(),

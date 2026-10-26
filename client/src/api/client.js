@@ -1,4 +1,4 @@
-const API_HOST = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+export const API_HOST = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const BASE_URL = `${API_HOST}/api/v1`;
 
 async function request(endpoint, options = {}) {

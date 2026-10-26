@@ -55,6 +55,17 @@ export function AuthProvider({ children }) {
     toast.info('You have been logged out.');
   };
 
+  const logoutAll = async () => {
+    try {
+      await api.post('/auth/logout-all');
+      toast.success('Signed out of all devices.');
+    } catch (err) {
+      toast.error(err.message || 'Could not sign out other devices.');
+      return;
+    }
+    setUser(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -65,6 +76,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        logoutAll,
         refreshUser: fetchCurrentUser,
       }}
     >

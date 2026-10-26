@@ -39,7 +39,8 @@ export async function getLeaderboard(req, res, next) {
       LIMIT ?
     `;
 
-    const rows = await db.prepare(sql).all(Number(limit) || 20);
+    const safeLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const rows = await db.prepare(sql).all(safeLimit);
 
     const leaderboard = rows.map((r, index) => ({
       rank: index + 1,

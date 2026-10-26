@@ -6,13 +6,14 @@ import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OAuthButtons } from '@/components/oauth-buttons';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50),
   email: z.string().trim().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password cannot exceed 72 characters'),
   bio: z.string().max(250).optional(),
 });
 
@@ -34,7 +35,6 @@ export function SignupPage() {
     setIsLoading(true);
     try {
       await registerAuth(data);
-      toast.success('Account created! Welcome to IdeaPulse.');
       navigate('/feed');
     } catch (err) {
       toast.error(err.message || 'Registration failed.');
@@ -59,6 +59,8 @@ export function SignupPage() {
             Join the community to rate ideas, post feedback, or share new concepts.
           </p>
         </div>
+
+        <OAuthButtons redirectPath="/feed" />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
@@ -108,7 +110,7 @@ export function SignupPage() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 {...register('password')}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 hasError={!!errors.password}
                 className="h-11 pr-10"
               />
