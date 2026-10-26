@@ -21,9 +21,13 @@ if (NODE_ENV === 'production') {
   }
 }
 
+// Render sets RENDER_EXTERNAL_URL to the service's public URL; for a single-origin deploy that is
+// both the client and the API, so it's the right default when CLIENT_URL / SERVER_URL are unset.
+const RENDER_URL = (process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+
 // CLIENT_URL may be a comma-separated list, e.g. "https://ideapulse.app,https://www.ideapulse.app".
 // The first entry is used as the redirect target after OAuth sign-in.
-const clientUrls = (process.env.CLIENT_URL || 'http://localhost:5173')
+const clientUrls = (process.env.CLIENT_URL || RENDER_URL || 'http://localhost:5173')
   .split(',')
   .map((u) => u.trim().replace(/\/$/, ''))
   .filter(Boolean);
@@ -34,7 +38,7 @@ export const env = {
   CLIENT_URL: clientUrls[0],
   CLIENT_URLS: clientUrls,
   // Public base URL of this API server (used to build OAuth callback URLs).
-  SERVER_URL: (process.env.SERVER_URL || '').replace(/\/$/, ''),
+  SERVER_URL: (process.env.SERVER_URL || RENDER_URL).replace(/\/$/, ''),
   JWT_SECRET: process.env.JWT_SECRET || DEV_JWT_SECRET,
   DATABASE_PATH: process.env.DATABASE_PATH || './src/db/ideapulse.db',
   TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL || '',
