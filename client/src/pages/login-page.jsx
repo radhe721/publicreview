@@ -132,9 +132,14 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="login-password" className="text-xs font-bold uppercase tracking-wider text-ink block">
-              Password <span className="text-danger">*</span>
-            </label>
+            <div className="flex items-baseline justify-between">
+              <label htmlFor="login-password" className="text-xs font-bold uppercase tracking-wider text-ink block">
+                Password <span className="text-danger">*</span>
+              </label>
+              <Link to="/forgot-password" className="text-xs font-semibold text-accent-strong hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Input
                 id="login-password"

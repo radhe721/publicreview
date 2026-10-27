@@ -1,11 +1,17 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import db from '../config/db.js';
+import { env } from '../config/env.js';
 import { setAuthCookie, clearAuthCookie } from '../middleware/auth.js';
+import { sendMail } from '../services/mailer.js';
 
 // Compared against when the email is unknown, so response time doesn't reveal which emails exist.
 const DUMMY_HASH = bcrypt.hashSync('timing-equalizer-not-a-real-password', 10);
 
 const isPasswordHash = (hash) => typeof hash === 'string' && hash.startsWith('$2');
+
+const RESET_TOKEN_TTL_MINUTES = 60;
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 export async function register(req, res, next) {
   try {
@@ -129,4 +135,99 @@ export async function getMe(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+const FORGOT_PASSWORD_RESPONSE = {
+  success: true,
+  message: 'If an account exists for that email, a password reset link is on its way.'
+};
+
+// Always answers the same way so the endpoint can't be used to discover which emails have accounts.
+export async function forgotPassword(req, res, next) {
+  try {
+    const user = await db.prepare('SELECT id, name, email FROM users WHERE LOWER(email) = LOWER(?)').get(req.body.email);
+    if (!user) {
+      return res.json(FORGOT_PASSWORD_RESPONSE);
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.transaction(async (tx) => {
+      // Only the newest link works.
+      await tx.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
+      await tx.prepare(`
+        INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+        VALUES (?, ?, datetime('now', ?))
+      `).run(user.id, hashResetToken(token), `+${RESET_TOKEN_TTL_MINUTES} minutes`);
+    });
+
+    // In the fragment, not the query string: fragments never reach servers, Referer headers or
+    // analytics page_location, so the token stays in the user's browser.
+    const link = `${env.CLIENT_URL}/reset-password#token=${token}`;
+    // Not awaited: waiting on the mail provider would make known emails measurably slower.
+    sendMail({
+      to: user.email,
+      subject: 'Reset your IdeaPulse password',
+      text: `Hi ${user.name},\n\nSomeone asked to reset the password for your IdeaPulse account. ` +
+        `Open this link within ${RESET_TOKEN_TTL_MINUTES} minutes to choose a new one:\n\n${link}\n\n` +
+        `If you didn't ask for this, you can ignore this email; your password won't change.`,
+      html: `<p>Hi ${escapeHtml(user.name)},</p>` +
+        `<p>Someone asked to reset the password for your IdeaPulse account. ` +
+        `Open this link within ${RESET_TOKEN_TTL_MINUTES} minutes to choose a new one:</p>` +
+        `<p><a href="${link}">Reset your password</a></p>` +
+        `<p>If you didn't ask for this, you can ignore this email; your password won't change.</p>`
+    }).catch((err) => console.error('Password reset email failed:', err.message));
+
+    res.json(FORGOT_PASSWORD_RESPONSE);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Sets a new password from a reset link, signs the user out everywhere else, and signs them in here.
+export async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    const password_hash = await bcrypt.hash(password, 12);
+
+    const user = await db.transaction(async (tx) => {
+      // Marking the token used in the same statement that checks it keeps it single-use under races.
+      const claimed = await tx.prepare(`
+        UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP
+        WHERE token_hash = ? AND used_at IS NULL AND expires_at > datetime('now')
+        RETURNING user_id
+      `).get(hashResetToken(token));
+      if (!claimed) {
+        return null;
+      }
+
+      await tx.prepare(`
+        UPDATE users
+        SET password_hash = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(password_hash, claimed.user_id);
+      await tx.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(claimed.user_id);
+      return tx.prepare('SELECT * FROM users WHERE id = ?').get(claimed.user_id);
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'This reset link is invalid or has expired. Please request a new one.' }
+      });
+    }
+
+    const { password_hash: _hash, token_version, ...publicUser } = user;
+    setAuthCookie(res, user);
+
+    res.json({
+      success: true,
+      data: { user: publicUser }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }

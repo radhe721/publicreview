@@ -45,6 +45,15 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const resetPassword = async (token, password) => {
+    const res = await api.post('/auth/reset-password', { token, password });
+    if (res?.data?.user) {
+      setUser(res.data.user);
+      toast.success('Password updated. You are now signed in.');
+      return res.data.user;
+    }
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -75,6 +84,7 @@ export function AuthProvider({ children }) {
         isAdmin: user?.role === 'admin',
         login,
         register,
+        resetPassword,
         logout,
         logoutAll,
         refreshUser: fetchCurrentUser,

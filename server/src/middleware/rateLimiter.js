@@ -34,6 +34,18 @@ export const loginLimiter = rateLimit({
   }
 });
 
+// Each request can send an email, so this is tighter than the general auth budget.
+export const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'Too many password reset requests. Please try again later.' }
+  }
+});
+
 // OAuth start + callback are two requests per sign-in, so this budget is a bit larger.
 export const oauthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

@@ -46,5 +46,8 @@ export const env = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
-  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || ''
+  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
+  // Transactional email (password reset). Without a key, dev logs emails to the console.
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+  MAIL_FROM: process.env.MAIL_FROM || 'IdeaPulse <onboarding@resend.dev>'
 };

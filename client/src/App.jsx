@@ -21,6 +21,8 @@ const LeaderboardPage = React.lazy(() => import('./pages/leaderboard-page').then
 const ProfilePage = React.lazy(() => import('./pages/profile-page').then((m) => ({ default: m.ProfilePage })));
 const LoginPage = React.lazy(() => import('./pages/login-page').then((m) => ({ default: m.LoginPage })));
 const SignupPage = React.lazy(() => import('./pages/signup-page').then((m) => ({ default: m.SignupPage })));
+const ForgotPasswordPage = React.lazy(() => import('./pages/forgot-password-page').then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = React.lazy(() => import('./pages/reset-password-page').then((m) => ({ default: m.ResetPasswordPage })));
 const AdminModerationPage = React.lazy(() => import('./pages/admin-moderation-page').then((m) => ({ default: m.AdminModerationPage })));
 const AdminWaitlistPage = React.lazy(() => import('./pages/admin-waitlist-page').then((m) => ({ default: m.AdminWaitlistPage })));
 const NotFoundPage = React.lazy(() => import('./pages/not-found-page').then((m) => ({ default: m.NotFoundPage })));
@@ -108,6 +110,8 @@ export function App() {
                     <Route path="/profile/:id" element={<ProfilePage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/admin" element={<AdminModerationPage />} />
                     <Route path="/admin/waitlist" element={<AdminWaitlistPage />} />
                     <Route path="*" element={<NotFoundPage />} />

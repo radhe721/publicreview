@@ -12,6 +12,15 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required').max(200)
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('Invalid email address').max(100)
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().regex(/^[a-f0-9]{64}$/, 'Invalid or expired reset link'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password cannot exceed 72 characters')
+});
+
 export const oauthProviderSchema = z.object({
   provider: z.enum(['google', 'github'])
 });
