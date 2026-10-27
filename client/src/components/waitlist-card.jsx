@@ -4,6 +4,10 @@ import api from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2, Sparkles } from 'lucide-react';
+import { z } from 'zod';
+
+// Same rule the server applies, so anything accepted here isn't rejected after submitting.
+const emailSchema = z.string().trim().email().max(100);
 
 // Shown only once the list is big enough to be reassuring rather than empty.
 const SOCIAL_PROOF_MIN = 10;
@@ -28,7 +32,7 @@ export function WaitlistCard({ source = 'landing' }) {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+    if (!emailSchema.safeParse(email).success) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -44,7 +48,9 @@ export function WaitlistCard({ source = 'landing' }) {
       queryClient.setQueryData(['waitlist-count'], { success: true, data: { total: res.data.total } });
       setJoined(true);
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      // Validation errors arrive as "field: reason"; show the reason rather than "Validation failed".
+      const detail = err.details?.[0]?.replace(/^[\w.]+:\s*/, '');
+      setError(detail || err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,10 +134,11 @@ export function WaitlistCard({ source = 'landing' }) {
           />
         </div>
 
-        {/* Honeypot: invisible to people, tempting to bots. */}
+        {/* Honeypot: invisible to people, tempting to bots. Its label and id deliberately avoid words
+            like "website" or "url" that browser and password-manager autofill would fill in for real people. */}
         <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
-          <label htmlFor="waitlist-website">Website</label>
-          <input id="waitlist-website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+          <label htmlFor="waitlist-hp">Leave this empty</label>
+          <input id="waitlist-hp" name="hp_field" type="text" tabIndex={-1} autoComplete="off" data-1p-ignore data-lpignore="true" data-bwignore value={website} onChange={(e) => setWebsite(e.target.value)} />
         </div>
 
         {error && <p role="alert" className="text-xs text-danger">{error}</p>}
