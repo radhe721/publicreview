@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,14 +24,14 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   // The emailed link carries the token in the URL fragment (#token=...) so it is never sent to
   // servers or analytics. Read it once, then drop it from the address bar and history.
-  const [token] = useState(() => {
-    const value = new URLSearchParams(window.location.hash.slice(1)).get('token') || '';
+  const [token] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('token') || '');
+  const hasValidToken = /^[a-f0-9]{64}$/.test(token);
+
+  useEffect(() => {
     if (window.location.hash) {
       window.history.replaceState(window.history.state, '', window.location.pathname);
     }
-    return value;
-  });
-  const hasValidToken = /^[a-f0-9]{64}$/.test(token);
+  }, []);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
