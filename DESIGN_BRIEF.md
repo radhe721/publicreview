@@ -1,11 +1,11 @@
-# IdeaPulse Master Design Brief: The Workshop Ledger
+# BusinessListe Master Design Brief: The Workshop Ledger
 
 A cohesive design system synthesizing the best principles of world-class digital products into an original, authentic brand identity for early idea evaluation.
 
 ---
 
 ## 1. Brand Identity & Emotional Persona
-**IdeaPulse is "The Workshop Ledger"**: a place for independent builders, hackers, and craftsmen to stress-test early concepts before building. It feels like an independent architectural atelier or letterpress studio: quiet, literate, tactile, engineered with surgical precision, and completely devoid of corporate fluff.
+**BusinessListe is "The Workshop Ledger"**: a place for independent builders, hackers, and craftsmen to stress-test early concepts before building. It feels like an independent architectural atelier or letterpress studio: quiet, literate, tactile, engineered with surgical precision, and completely devoid of corporate fluff.
 
 * **Core Spirit**: *Warm Editorial + Engineered Precision*.
 * **Anti-patterns strictly banned**:
@@ -17,7 +17,7 @@ A cohesive design system synthesizing the best principles of world-class digital
 
 ## 2. The Reference Map (Principles Borrowed, Not Pixels Copied)
 
-| Reference Product | Design Principle Borrowed | Concrete Implementation in IdeaPulse |
+| Reference Product | Design Principle Borrowed | Concrete Implementation in BusinessListe |
 | :--- | :--- | :--- |
 | **Linear** (`linear.app`) | Speed, keyboard-first precision, layered surfaces | Global Command Palette (`Cmd/Ctrl+K`), quick navigation (`N` for post, `/` for search), instant optimistic UI, crisp typography, and 1px hairline borders. |
 | **Stripe** (`stripe.com`) | Form craftsmanship & hierarchy | Post/edit forms with clear labels, inline real-time error messages, smooth focus rings, and zero confusing fields. |

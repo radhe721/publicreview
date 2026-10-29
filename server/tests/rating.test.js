@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { runMigrations } from '../src/db/migrate.js';
 import db from '../src/config/db.js';
 
-describe('IdeaPulse Rating Business Logic Tests', () => {
+describe('BusinessListe Rating Business Logic Tests', () => {
   let authorUserId;
   let reviewerUserId;
   let testIdeaId;

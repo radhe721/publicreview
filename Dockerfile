@@ -1,4 +1,4 @@
-# Multi-stage Docker build for IdeaPulse
+# Multi-stage Docker build for BusinessListe
 
 # Stage 1: Build client static assets
 FROM node:20-alpine AS client-builder

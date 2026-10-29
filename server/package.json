@@ -2,7 +2,7 @@
   "name": "ideapulse-server",
   "version": "1.0.0",
   "type": "module",
-  "description": "IdeaPulse Backend REST API",
+  "description": "BusinessListe Backend REST API",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
