@@ -14,6 +14,8 @@ build/
 .env.*.local
 server/.env
 client/.env
+oci_businessliste_ed25519
+oci_businessliste_ed25519.pub
 
 # Local SQLite databases
 *.db
