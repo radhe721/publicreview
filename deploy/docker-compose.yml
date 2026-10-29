@@ -8,6 +8,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5001
+      # SQLite file lives on a named volume so it survives rebuilds (ignored when TURSO_DATABASE_URL is set).
+      DATABASE_PATH: /data/ideapulse.db
+    volumes:
+      - app_data:/data
     expose:
       - "5001"
 
@@ -28,5 +32,6 @@ services:
       - caddy_config:/config
 
 volumes:
+  app_data:
   caddy_data:
   caddy_config:
