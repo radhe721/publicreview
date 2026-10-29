@@ -274,7 +274,7 @@ export function IdeaRow({
                   <p className="text-sm font-semibold">Sign in to rate this idea</p>
                 </div>
                 <p className="text-xs text-ink-muted leading-relaxed">
-                  Join the IdeaPulse community to stress-test concepts and vote on early products.
+                  Join the BusinessListe community to stress-test concepts and vote on early products.
                 </p>
                 <div className="pt-1">
                   <Button

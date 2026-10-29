@@ -166,12 +166,12 @@ export async function forgotPassword(req, res, next) {
     // Not awaited: waiting on the mail provider would make known emails measurably slower.
     sendMail({
       to: user.email,
-      subject: 'Reset your IdeaPulse password',
-      text: `Hi ${user.name},\n\nSomeone asked to reset the password for your IdeaPulse account. ` +
+      subject: 'Reset your BusinessListe password',
+      text: `Hi ${user.name},\n\nSomeone asked to reset the password for your BusinessListe account. ` +
         `Open this link within ${RESET_TOKEN_TTL_MINUTES} minutes to choose a new one:\n\n${link}\n\n` +
         `If you didn't ask for this, you can ignore this email; your password won't change.`,
       html: `<p>Hi ${escapeHtml(user.name)},</p>` +
-        `<p>Someone asked to reset the password for your IdeaPulse account. ` +
+        `<p>Someone asked to reset the password for your BusinessListe account. ` +
         `Open this link within ${RESET_TOKEN_TTL_MINUTES} minutes to choose a new one:</p>` +
         `<p><a href="${link}">Reset your password</a></p>` +
         `<p>If you didn't ask for this, you can ignore this email; your password won't change.</p>`

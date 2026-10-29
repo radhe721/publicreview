@@ -10,7 +10,7 @@ async function startServer() {
   }
 
   const server = app.listen(env.PORT, () => {
-    console.log(`🚀 IdeaPulse API Server is running on http://localhost:${env.PORT}`);
+    console.log(`🚀 BusinessListe API Server is running on http://localhost:${env.PORT}`);
     console.log(`📡 CORS configured for client at ${env.CLIENT_URL}`);
     if (env.TURSO_DATABASE_URL) {
       console.log(`☁️ Connected to Turso database: ${env.TURSO_DATABASE_URL}`);

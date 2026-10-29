@@ -129,7 +129,7 @@ export function Navbar({ onOpenCommandPalette }) {
         },
         {
           title: 'All-Time Hall of Fame',
-          desc: 'Highest validated ideas in IdeaPulse history',
+          desc: 'Highest validated ideas in BusinessListe history',
           path: '/leaderboard?timeframe=all',
           icon: Trophy,
         },
@@ -164,7 +164,7 @@ export function Navbar({ onOpenCommandPalette }) {
       path: '/about',
       items: [
         {
-          title: 'The IdeaPulse Manifesto',
+          title: 'The BusinessListe Manifesto',
           desc: 'Why we validate and stress-test ideas before building',
           path: '/feed#manifesto',
           icon: Info,
@@ -201,7 +201,7 @@ export function Navbar({ onOpenCommandPalette }) {
               </svg>
             </div>
             <span className="font-bold text-[18px] text-ink tracking-tight leading-none">
-              IdeaPulse
+              BusinessListe
             </span>
           </Link>
 

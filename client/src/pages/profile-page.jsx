@@ -97,7 +97,7 @@ export function ProfilePage() {
               </div>
 
               <p className="text-sm text-ink-muted max-w-xl leading-relaxed">
-                {user.bio || 'Product builder and reviewer in the IdeaPulse community.'}
+                {user.bio || 'Product builder and reviewer in the BusinessListe community.'}
               </p>
 
               <p className="text-xs text-ink-faint pt-1">

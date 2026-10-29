@@ -305,7 +305,7 @@ export function IdeaDetailPage() {
                     {isAuthor && <span className="ml-1.5 text-xs text-accent-strong font-semibold">(You)</span>}
                   </h3>
                   <p className="text-xs text-ink-muted line-clamp-1 mt-0.5">
-                    {idea.author?.bio || 'IdeaPulse community builder'}
+                    {idea.author?.bio || 'BusinessListe community builder'}
                   </p>
                 </div>
               </div>

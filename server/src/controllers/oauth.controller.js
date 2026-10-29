@@ -82,7 +82,7 @@ async function getJson(url, accessToken) {
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${accessToken}`,
-      'User-Agent': 'IdeaPulse'
+      'User-Agent': 'BusinessListe'
     },
     signal: AbortSignal.timeout(10000)
   });
@@ -182,7 +182,7 @@ export function startOAuth(req, res) {
 
 function normalizeName(name) {
   const clean = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 50);
-  return clean.length >= 2 ? clean : 'IdeaPulse member';
+  return clean.length >= 2 ? clean : 'BusinessListe member';
 }
 
 function normalizeAvatar(url, name) {
@@ -195,7 +195,7 @@ function normalizeAvatar(url, name) {
 /**
  * Finds the user for a provider identity, linking or creating as needed.
  * Linking to an existing email/password account only happens with a provider-verified email.
- * Because IdeaPulse does not verify emails at signup, someone could have pre-registered that
+ * Because BusinessListe does not verify emails at signup, someone could have pre-registered that
  * email with a password; so on first link the password is disabled and old sessions revoked,
  * leaving the verified owner as the only one who can sign in.
  */

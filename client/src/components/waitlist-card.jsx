@@ -77,7 +77,7 @@ export function WaitlistCard({ source = 'landing' }) {
           <Sparkles className="w-3.5 h-3.5" /> Early access
         </span>
         <h2 id="waitlist-heading" className="text-lg sm:text-xl font-bold tracking-tight text-ink">
-          Join the IdeaPulse waitlist
+          Join the BusinessListe waitlist
         </h2>
         <p className="text-sm text-ink-muted">
           Be first to try new validation tools and get launch updates.

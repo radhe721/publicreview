@@ -7,7 +7,7 @@ const OAUTH_ERRORS = {
   oauth_cancelled: 'Sign-in was cancelled.',
   oauth_state: 'Your sign-in session expired. Please try again.',
   oauth_email_unverified: 'Your account needs a verified email address to sign in.',
-  oauth_account_conflict: 'This IdeaPulse account is already linked to a different account with that provider.',
+  oauth_account_conflict: 'This BusinessListe account is already linked to a different account with that provider.',
   oauth_failed: 'We could not complete sign-in. Please try again.',
 };
 

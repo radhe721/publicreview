@@ -68,7 +68,7 @@ export function LoginPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-ink tracking-tight">
-            Sign in to IdeaPulse
+            Sign in to BusinessListe
           </h1>
           <p className="text-xs text-ink-muted leading-relaxed">
             Enter your email to rate ideas, post feedback, or share new concepts.

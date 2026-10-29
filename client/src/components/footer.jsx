@@ -132,7 +132,7 @@ export function Footer() {
         {/* Small Print Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ink-faint">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-ink">IdeaPulse</span>
+            <span className="font-bold text-ink">BusinessListe</span>
             <span>•</span>
             <span>A clean, ranked-list community where the list is the hero.</span>
           </div>

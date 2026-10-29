@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
     const res = await api.post('/auth/register', userData);
     if (res?.data?.user) {
       setUser(res.data.user);
-      toast.success(`Account created! Welcome to IdeaPulse, ${res.data.user.name}.`);
+      toast.success(`Account created! Welcome to BusinessListe, ${res.data.user.name}.`);
       return res.data.user;
     }
   };
