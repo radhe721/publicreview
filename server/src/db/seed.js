@@ -18,6 +18,8 @@ export async function seedDatabase() {
   await runMigrations();
 
   await db.transaction(async (tx) => {
+    await tx.prepare('DELETE FROM repo_upvotes').run();
+    await tx.prepare('DELETE FROM shared_repos').run();
     await tx.prepare('DELETE FROM waitlist_signups').run();
     await tx.prepare('DELETE FROM demand_signals').run();
     await tx.prepare('DELETE FROM oauth_accounts').run();
