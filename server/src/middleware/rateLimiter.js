@@ -68,3 +68,15 @@ export const waitlistLimiter = rateLimit({
     error: { message: 'Too many signups from this network. Please try again later.' }
   }
 });
+
+// Each share calls the GitHub API, which has its own hourly budget for this server.
+export const repoShareLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'You have shared a lot of repos this hour. Please try again later.' }
+  }
+});

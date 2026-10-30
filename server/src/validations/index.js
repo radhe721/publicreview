@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseGithubRepo } from '../services/github.js';
 
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name cannot exceed 50 characters'),
@@ -87,4 +88,17 @@ export const waitlistSchema = z.object({
   source: z.string().trim().max(40).optional().nullable(),
   // Honeypot: hidden from people, filled in by bots.
   website: z.string().max(0, 'Invalid submission').optional()
+});
+
+export const shareRepoSchema = z.object({
+  url: z.string().trim().max(300)
+    .refine((v) => parseGithubRepo(v) !== null, 'Enter a GitHub repository link, like https://github.com/owner/repo'),
+  note: z.string().trim().max(280, 'Note cannot exceed 280 characters').optional().nullable()
+});
+
+export const repoListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  search: z.string().trim().max(100).optional(),
+  sort: z.enum(['top', 'newest']).optional().default('top')
 });

@@ -23,6 +23,8 @@ import {
   Calendar,
   Layers,
   Award,
+  Github,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -102,6 +104,30 @@ export function Navbar({ onOpenCommandPalette }) {
           desc: 'Filter by Tech, Design, Social, Education, and more',
           path: '/feed#categories',
           icon: Layers,
+        },
+      ],
+    },
+    repos: {
+      label: 'Repos',
+      path: '/repos',
+      items: [
+        {
+          title: 'Top Repos',
+          desc: 'Open-source projects the community upvoted most',
+          path: '/repos?sort=top',
+          icon: Star,
+        },
+        {
+          title: 'Newest Repos',
+          desc: 'GitHub projects shared most recently',
+          path: '/repos?sort=newest',
+          icon: Calendar,
+        },
+        {
+          title: 'Share a Repo',
+          desc: 'Found something great on GitHub? Post the link',
+          path: '/repos',
+          icon: Github,
         },
       ],
     },
@@ -456,6 +482,13 @@ export function Navbar({ onOpenCommandPalette }) {
               className="px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-hover rounded-[8px] min-h-[44px] flex items-center"
             >
               Ideas
+            </NavLink>
+            <NavLink
+              to="/repos"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-hover rounded-[8px] min-h-[44px] flex items-center"
+            >
+              Repos
             </NavLink>
             <NavLink
               to="/leaderboard"

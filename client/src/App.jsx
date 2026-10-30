@@ -17,6 +17,7 @@ const FeedPage = React.lazy(() => import('./pages/feed-page').then((m) => ({ def
 const IdeaDetailPage = React.lazy(() => import('./pages/idea-detail-page').then((m) => ({ default: m.IdeaDetailPage })));
 const SubmitIdeaPage = React.lazy(() => import('./pages/submit-idea-page').then((m) => ({ default: m.SubmitIdeaPage })));
 const EditIdeaPage = React.lazy(() => import('./pages/edit-idea-page').then((m) => ({ default: m.EditIdeaPage })));
+const ReposPage = React.lazy(() => import('./pages/repos-page').then((m) => ({ default: m.ReposPage })));
 const LeaderboardPage = React.lazy(() => import('./pages/leaderboard-page').then((m) => ({ default: m.LeaderboardPage })));
 const ProfilePage = React.lazy(() => import('./pages/profile-page').then((m) => ({ default: m.ProfilePage })));
 const LoginPage = React.lazy(() => import('./pages/login-page').then((m) => ({ default: m.LoginPage })));
@@ -106,6 +107,7 @@ export function App() {
                     <Route path="/ideas/:id" element={<IdeaDetailPage />} />
                     <Route path="/ideas/:id/edit" element={<EditIdeaPage />} />
                     <Route path="/submit" element={<SubmitIdeaPage />} />
+                    <Route path="/repos" element={<ReposPage />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/profile/:id" element={<ProfilePage />} />
                     <Route path="/login" element={<LoginPage />} />
