@@ -49,9 +49,9 @@ export async function getRepos(req, res, next) {
     const conditions = [];
     const params = [];
     if (search) {
-      conditions.push('(r.full_name LIKE ? OR r.description LIKE ? OR r.note LIKE ? OR r.topics LIKE ?)');
+      conditions.push('(r.full_name LIKE ? OR r.description LIKE ? OR r.note LIKE ? OR r.topics LIKE ? OR r.language LIKE ?)');
       const term = `%${search}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term);
     }
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 

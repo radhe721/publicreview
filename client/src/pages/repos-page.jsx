@@ -344,7 +344,7 @@ export function ReposPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search repos or topics..."
+                placeholder="Search repos, topics, languages..."
                 className="pl-9 pr-9 rounded-[8px] h-10 text-xs bg-surface border-border-strong text-ink placeholder:text-ink-faint focus:border-accent-strong"
               />
               {searchInput && (

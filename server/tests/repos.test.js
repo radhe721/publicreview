@@ -111,6 +111,10 @@ describe('Shared GitHub repos', () => {
     assert.ok(found);
     assert.strictEqual(found.has_upvoted, false);
 
+    // Language counts too: "typescript" is only in the language field, not the name, description or topics.
+    const byLanguage = await request(app).get('/api/v1/repos?search=typescript');
+    assert.ok(byLanguage.body.data.repos.some((r) => r.id === repoId));
+
     const asBob = await request(app).get('/api/v1/repos?sort=newest').set('Cookie', bobCookie);
     assert.strictEqual(asBob.body.data.repos.find((r) => r.id === repoId).has_upvoted, true);
 
