@@ -195,6 +195,17 @@ export function IdeaRow({
                 </span>
               </>
             )}
+            {idea.is_featured && (
+              <>
+                <span className="px-1.5 py-0.5 rounded-full bg-accent-strong text-accent-ink font-bold uppercase tracking-wider text-[10px]">Featured</span>
+              </>
+            )}
+            {idea.launch && (
+              <>
+                <span className="text-ink-faint select-none">•</span>
+                <span className="text-success font-semibold whitespace-nowrap">Launched</span>
+              </>
+            )}
             {needsVotes && (
               <>
                 <span className="text-ink-faint select-none">•</span>

@@ -26,6 +26,9 @@ import reportRoutes from './routes/report.routes.js';
 import waitlistRoutes from './routes/waitlist.routes.js';
 import reposRoutes from './routes/repos.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import communityRoutes from './routes/community.routes.js';
+import paymentsRoutes from './routes/payments.routes.js';
+import { stripeWebhook } from './controllers/payments.controller.js';
 
 export const app = express();
 
@@ -69,6 +72,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Stripe webhook needs the raw body for its signature check, so it is registered before JSON parsing
+// (and before CSRF: Stripe calls it server-to-server, authenticated by the signature instead).
+app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json', limit: '1mb' }), stripeWebhook);
 
 // Body parsing & cookies
 app.use(express.json({ limit: '1mb' }));
@@ -137,6 +144,8 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/waitlist', waitlistRoutes);
 app.use('/api/v1/repos', reposRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1', communityRoutes);
+app.use('/api/v1', paymentsRoutes);
 
 // In production or when client/dist exists, serve frontend static assets & SPA fallback
 if (fs.existsSync(clientDistPath)) {

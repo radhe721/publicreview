@@ -73,7 +73,7 @@ export async function submitFeedback(req, res, next) {
   try {
     const ideaId = Number(req.params.id);
     const userId = req.user.id;
-    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ?').get(ideaId);
+    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ? AND status = \'published\'').get(ideaId);
     if (!idea) {
       return res.status(404).json({ success: false, error: { message: 'Idea not found.' } });
     }

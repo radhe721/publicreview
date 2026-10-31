@@ -76,7 +76,7 @@ describe('Ideas Supertest Suite (CRUD, Validation, Permissions, Filters, Paginat
     createdIdeaId = res.body.data.idea.id;
   });
 
-  test('Create rejects empty title, title > 60 chars, tagline > 100 chars, description < 20 or > 5000 chars, invalid category with 400', async () => {
+  test('Create rejects empty title, title > 80 chars, tagline > 140 chars, description < 20 or > 5000 chars, invalid category with 400', async () => {
     // Empty title
     const resEmptyTitle = await request(app)
       .post('/api/v1/ideas')
@@ -94,7 +94,7 @@ describe('Ideas Supertest Suite (CRUD, Validation, Permissions, Filters, Paginat
       .post('/api/v1/ideas')
       .set('Cookie', cookie1)
       .send({
-        title: 'This is a deliberately extremely long title designed to exceed the sixty character boundary limitation',
+        title: 'This is a deliberately extremely long title designed to exceed the eighty character boundary limitation for titles',
         pitch: 'A valid tagline that exceeds ten characters easily',
         description: 'A sufficiently long description text exceeding twenty characters.',
         category: 'Tech'
@@ -107,7 +107,7 @@ describe('Ideas Supertest Suite (CRUD, Validation, Permissions, Filters, Paginat
       .set('Cookie', cookie1)
       .send({
         title: 'Valid Short Title',
-        pitch: 'This tagline is deliberately expanded and repeated to ensure that it runs over one hundred characters in total length for boundary testing!',
+        pitch: 'This tagline is deliberately expanded and repeated to ensure that it runs over one hundred and forty characters in total length for boundary testing, really!',
         description: 'A sufficiently long description text exceeding twenty characters.',
         category: 'Tech'
       });

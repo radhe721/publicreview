@@ -135,7 +135,7 @@ function FeedbackForm({ ideaId, mine, onSaved }) {
   );
 }
 
-function FeedbackSummary({ feedback }) {
+function FeedbackSummary({ feedback, ideaId, isAuthor }) {
   const total = feedback?.total || 0;
   if (total === 0) {
     return (
@@ -181,12 +181,35 @@ function FeedbackSummary({ feedback }) {
             {feedback.would_make_pay.map((w, i) => (
               <li key={i} className="text-xs text-ink leading-relaxed">
                 "{w.text}" <span className="text-ink-faint">— {w.user_name}</span>
+                {isAuthor && <HelpfulButton ideaId={ideaId} userId={w.user_id} />}
               </li>
             ))}
           </ul>
         </div>
       )}
     </div>
+  );
+}
+
+function HelpfulButton({ ideaId, userId }) {
+  const [done, setDone] = useState(false);
+  if (done) return <span className="ml-2 text-success font-semibold">Marked helpful</span>;
+  return (
+    <button
+      type="button"
+      className="ml-2 text-accent-strong font-semibold hover:underline"
+      onClick={async () => {
+        try {
+          await api.post(`/ideas/${ideaId}/feedback/${userId}/helpful`);
+          setDone(true);
+          toast.success('Thanks. The rater earned +5 reputation.');
+        } catch (err) {
+          toast.error(err.message);
+        }
+      }}
+    >
+      Helpful
+    </button>
   );
 }
 
@@ -200,7 +223,7 @@ export function StructuredFeedback({ ideaId, isAuthor, isAuthenticated }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
       <div className="md:col-span-6">
-        <FeedbackSummary feedback={feedback} />
+        <FeedbackSummary feedback={feedback} ideaId={ideaId} isAuthor={isAuthor} />
       </div>
       <div className="md:col-span-6">
         {isAuthor ? null : isAuthenticated ? (

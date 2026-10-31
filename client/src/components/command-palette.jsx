@@ -120,6 +120,14 @@ export function CommandPalette({ open, onOpenChange }) {
       type: 'idea',
       perform: () => navigate(`/ideas/${idea.id}`),
     })),
+    ...(query.trim().length >= 2 ? [{
+      id: 'search-all',
+      title: `Search ideas, open-source projects and people for "${query.trim()}"`,
+      category: 'Search',
+      icon: Compass,
+      type: 'action',
+      perform: () => navigate(`/search?q=${encodeURIComponent(query.trim())}`),
+    }] : []),
   ];
 
   useEffect(() => {

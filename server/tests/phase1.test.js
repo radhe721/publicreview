@@ -27,8 +27,8 @@ async function makeUser(label, { established = false, admin = false } = {}) {
 async function makeIdea(author, title) {
   const res = await request(app).post('/api/v1/ideas').set('Cookie', author.cookie).send({
     title,
-    pitch: 'A one-line pitch for the phase one tests',
-    description: 'A description long enough to pass validation for the phase one test suite.',
+    pitch: `Pitch for ${title}`,
+    description: `A description long enough to pass validation for the phase one test suite: ${title}.`,
     category: 'Business'
   });
   assert.strictEqual(res.status, 201, JSON.stringify(res.body));

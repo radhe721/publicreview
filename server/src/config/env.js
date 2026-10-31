@@ -51,5 +51,8 @@ export const env = {
   GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
   // Transactional email (password reset). Without a key, dev logs emails to the console.
   RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-  MAIL_FROM: process.env.MAIL_FROM || 'BusinessListe <onboarding@resend.dev>'
+  MAIL_FROM: process.env.MAIL_FROM || 'BusinessListe <onboarding@resend.dev>',
+  // Payments (Stripe Checkout). Without a key, paid features show as "coming soon".
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || ''
 };

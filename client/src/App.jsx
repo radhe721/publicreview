@@ -9,6 +9,7 @@ import { Toaster } from 'sonner';
 import { Navbar } from './components/navbar';
 import { Footer } from './components/footer';
 import { CommandPalette } from './components/command-palette';
+import { CookieBanner } from './components/cookie-banner';
 
 // Pages
 import { LandingPage } from './pages/landing-page';
@@ -27,6 +28,25 @@ const ResetPasswordPage = React.lazy(() => import('./pages/reset-password-page')
 const AdminModerationPage = React.lazy(() => import('./pages/admin-moderation-page').then((m) => ({ default: m.AdminModerationPage })));
 const AdminWaitlistPage = React.lazy(() => import('./pages/admin-waitlist-page').then((m) => ({ default: m.AdminWaitlistPage })));
 const AboutPage = React.lazy(() => import('./pages/about-page').then((m) => ({ default: m.AboutPage })));
+const lazyNamed = (loader, name) => React.lazy(() => loader().then((m) => ({ default: m[name] })));
+const community = () => import('./pages/community-pages');
+const paid = () => import('./pages/paid-pages');
+const legal = () => import('./pages/legal-pages');
+const NotificationsPage = lazyNamed(community, 'NotificationsPage');
+const ContributorsPage = lazyNamed(community, 'ContributorsPage');
+const CofoundersPage = lazyNamed(community, 'CofoundersPage');
+const LaunchedPage = lazyNamed(community, 'LaunchedPage');
+const SearchPage = lazyNamed(community, 'SearchPage');
+const DiscussionsPage = lazyNamed(community, 'DiscussionsPage');
+const UnsubscribePage = lazyNamed(community, 'UnsubscribePage');
+const PricingPage = lazyNamed(paid, 'PricingPage');
+const IdeaReportPage = lazyNamed(paid, 'IdeaReportPage');
+const PublicReportPage = lazyNamed(paid, 'PublicReportPage');
+const AnalyticsPage = lazyNamed(paid, 'AnalyticsPage');
+const IdeaLandingPage = lazyNamed(paid, 'IdeaLandingPage');
+const TermsPage = lazyNamed(legal, 'TermsPage');
+const PrivacyPage = lazyNamed(legal, 'PrivacyPage');
+const CookiesPage = lazyNamed(legal, 'CookiesPage');
 const NotFoundPage = React.lazy(() => import('./pages/not-found-page').then((m) => ({ default: m.NotFoundPage })));
 
 function RouteLoadingFallback() {
@@ -112,6 +132,21 @@ export function App() {
                     <Route path="/open-source" element={<ReposPage />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/about" element={<AboutPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/contributors" element={<ContributorsPage />} />
+                    <Route path="/cofounders" element={<CofoundersPage />} />
+                    <Route path="/launched" element={<LaunchedPage />} />
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/discussions" element={<DiscussionsPage />} />
+                    <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                    <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/ideas/:id/report" element={<IdeaReportPage />} />
+                    <Route path="/ideas/:id/analytics" element={<AnalyticsPage />} />
+                    <Route path="/r/:token" element={<PublicReportPage />} />
+                    <Route path="/l/:id" element={<IdeaLandingPage />} />
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
+                    <Route path="/cookies" element={<CookiesPage />} />
                     <Route path="/profile/:id" element={<ProfilePage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
@@ -127,6 +162,7 @@ export function App() {
             </div>
             <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
             <ThemedToaster />
+            <CookieBanner />
           </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>

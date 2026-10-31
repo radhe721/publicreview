@@ -38,9 +38,19 @@ export const demandSignalSchema = z.object({
   join_waitlist: data.intent === 'pass' ? false : data.join_waitlist
 }));
 
+const optionalText = (max, label) => z.string().trim().max(max, `${label} cannot exceed ${max} characters`).optional().nullable()
+  .transform((v) => (v === '' ? null : v));
+
 export const createIdeaSchema = z.object({
-  title: z.string().trim().min(5, 'Title must be at least 5 characters').max(60, 'Title cannot exceed 60 characters'),
-  pitch: z.string().trim().min(10, 'Pitch must be at least 10 characters').max(100, 'Pitch cannot exceed 100 characters'),
+  title: z.string().trim().min(5, 'Title must be at least 5 characters').max(80, 'Title cannot exceed 80 characters'),
+  pitch: z.string().trim().min(10, 'Pitch must be at least 10 characters').max(140, 'Pitch cannot exceed 140 characters'),
+  problem: optionalText(1000, 'Problem'),
+  target_buyer: optionalText(200, 'Target buyer'),
+  suggested_price: z.coerce.number().int().min(0).max(100000).optional().nullable(),
+  how_it_works: optionalText(3000, 'How it works'),
+  competitors: optionalText(500, 'Competitors'),
+  link_url: z.string().trim().url('Link must be a full URL (https://...)').max(300).refine((u) => /^https?:\/\//i.test(u), 'Link must start with http:// or https://').optional().nullable().or(z.literal('').transform(() => null)),
+  status: z.enum(['draft', 'published']).optional(),
   description: z.string().trim().min(20, 'Description must be at least 20 characters').max(5000, 'Description cannot exceed 5000 characters'),
   category: z.enum(['Tech', 'Business', 'Design', 'Social', 'Education', 'Other'], {
     errorMap: () => ({ message: 'Category must be one of: Tech, Business, Design, Social, Education, Other' })
@@ -79,7 +89,10 @@ export const paginationQuerySchema = z.object({
   time_window: z.string().trim().optional(),
   timeframe: z.string().trim().optional(),
   tag: z.string().trim().optional(),
-  ranked_only: z.enum(['true', 'false']).optional()
+  ranked_only: z.enum(['true', 'false']).optional(),
+  price_min: z.coerce.number().int().min(0).optional(),
+  price_max: z.coerce.number().int().min(0).optional(),
+  launched: z.enum(['true', 'false']).optional()
 });
 
 export const waitlistSchema = z.object({
@@ -110,7 +123,9 @@ export const ROLE_TAGS = ['founder', 'freelancer', 'developer', 'agency_owner', 
 
 export const updateProfileSchema = z.object({
   bio: z.string().trim().max(250, 'Bio cannot exceed 250 characters').optional().nullable(),
-  role_tag: z.enum(ROLE_TAGS).optional().nullable()
+  role_tag: z.enum(ROLE_TAGS).optional().nullable(),
+  industry: z.string().trim().max(60).optional().nullable(),
+  country: z.string().trim().max(60).optional().nullable()
 });
 
 export const feedbackSchema = z.object({
@@ -127,4 +142,58 @@ export const teamSeedSchema = z.object({
 
 export const heldVoteActionSchema = z.object({
   action: z.enum(['release', 'delete'])
+});
+
+export const launchSchema = z.object({
+  launched_url: z.string().trim().url('Enter the product URL (https://...)').max(300).refine((u) => /^https?:\/\//i.test(u), 'URL must start with http:// or https://'),
+  launched_at: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-11-01'),
+  mrr_range: z.enum(['pre_revenue', 'under_1k', '1k_5k', '5k_20k', '20k_100k', 'over_100k']).optional().nullable(),
+  show_exact_mrr: z.boolean().optional()
+});
+
+export const verifyRevenueSchema = z.object({
+  stripe_key: z.string().trim().regex(/^rk_(live|test)_[A-Za-z0-9]+$/, 'Use a Stripe restricted key (starts with rk_live_ or rk_test_) with read access to subscriptions only.')
+});
+
+export const buildInterestSchema = z.object({
+  note: z.string().trim().max(500).optional().nullable()
+});
+
+export const cofounderSchema = z.object({
+  skills: z.string().trim().min(3, 'Describe your skills').max(300),
+  looking_for: z.string().trim().min(3, 'Say what you want to build or who you need').max(500),
+  contact: z.string().trim().max(200).optional().nullable()
+});
+
+export const contentReportSchema = z.object({
+  target_type: z.enum(['comment', 'repo', 'repo_comment']),
+  target_id: z.number().int().positive(),
+  reason: z.string().trim().min(5, 'Reason must be at least 5 characters').max(500)
+});
+
+export const notificationPrefsSchema = z.record(z.object({ inapp: z.boolean().optional(), email: z.boolean().optional() }));
+
+export const checkoutSchema = z.object({
+  product: z.enum(['report', 'pro', 'featured']),
+  idea_id: z.number().int().positive().optional().nullable()
+});
+
+export const landingSignupSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Please enter a valid email address').max(100),
+  website: z.string().max(0).optional()
+});
+
+export const adminIdeaSchema = z.object({
+  status: z.enum(['published', 'hidden']).optional(),
+  category: z.enum(['Tech', 'Business', 'Design', 'Social', 'Education', 'Other']).optional()
+});
+
+export const adminHideSchema = z.object({
+  hidden: z.boolean()
+});
+
+export const grantSchema = z.object({
+  product: z.enum(['report', 'pro']),
+  user_id: z.number().int().positive().optional(),
+  idea_id: z.number().int().positive().optional()
 });

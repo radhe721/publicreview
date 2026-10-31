@@ -1,4 +1,6 @@
 import db from '../config/db.js';
+import { spamCheck } from '../services/spam.js';
+import { notify } from '../services/notify.js';
 
 export async function getIdeaComments(req, res, next) {
   try {
@@ -13,19 +15,23 @@ export async function getIdeaComments(req, res, next) {
         u.id AS user_id,
         u.name AS user_name,
         u.avatar_url AS user_avatar,
-        u.role AS user_role
+        u.role AS user_role,
+        (SELECT COUNT(*) FROM comment_upvotes v WHERE v.comment_id = c.id) AS upvotes,
+        EXISTS(SELECT 1 FROM comment_upvotes v WHERE v.comment_id = c.id AND v.user_id = ?) AS has_upvoted
       FROM comments c
       JOIN users u ON c.user_id = u.id
-      WHERE c.idea_id = ?
+      WHERE c.idea_id = ? AND c.hidden = 0
       ORDER BY c.created_at ASC
     `;
 
-    const rows = await db.prepare(commentsSql).all(ideaId);
+    const rows = await db.prepare(commentsSql).all(req.user?.id || 0, ideaId);
     const comments = rows.map(c => ({
       id: c.id,
       parent_id: c.parent_id || null,
       content: c.content,
       created_at: c.created_at,
+      upvotes: Number(c.upvotes || 0),
+      has_upvoted: Boolean(Number(c.has_upvoted || 0)),
       user: {
         id: c.user_id,
         name: c.user_name,
@@ -49,7 +55,7 @@ export async function createComment(req, res, next) {
     const userId = req.user.id;
     const { content, parent_id } = req.body;
 
-    const idea = await db.prepare('SELECT id FROM ideas WHERE id = ?').get(ideaId);
+    const idea = await db.prepare('SELECT id, user_id, title FROM ideas WHERE id = ?').get(ideaId);
     if (!idea) {
       return res.status(404).json({ success: false, error: { message: 'Idea not found.' } });
     }
@@ -64,12 +70,28 @@ export async function createComment(req, res, next) {
       }
     }
 
+    const spam = await spamCheck(userId, content, { table: 'comments', column: 'content' });
+    if (spam) {
+      return res.status(400).json({ success: false, error: { message: spam } });
+    }
+
     const stmt = db.prepare(`
       INSERT INTO comments (user_id, idea_id, content, parent_id)
       VALUES (?, ?, ?, ?)
     `);
 
     const result = await stmt.run(userId, ideaId, content, parent_id || null);
+
+    const link = `/ideas/${ideaId}?tab=comments`;
+    if (Number(idea.user_id) !== Number(userId)) {
+      await notify(idea.user_id, 'comment', `${req.user.name} commented on "${idea.title}"`, link);
+    }
+    if (parent_id) {
+      const parent = await db.prepare('SELECT user_id FROM comments WHERE id = ?').get(parent_id);
+      if (parent && Number(parent.user_id) !== Number(userId) && Number(parent.user_id) !== Number(idea.user_id)) {
+        await notify(parent.user_id, 'comment', `${req.user.name} replied to your comment`, link);
+      }
+    }
     const comment = {
       id: result.lastInsertRowid,
       parent_id: parent_id || null,

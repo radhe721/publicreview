@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { IdeaRow } from '@/components/idea-row';
+import { IdeaExtraFields, DuplicateHint, extraFieldsSchema, extraFieldsDefaults, extraFieldsPayload } from '@/components/idea-extra-fields';
 import { ArrowLeft, X, Sparkles, Image } from 'lucide-react';
 import api from '@/api/client';
 import { toast } from 'sonner';
@@ -20,12 +21,12 @@ const schema = z.object({
     .string()
     .trim()
     .min(3, 'Title must be at least 3 characters')
-    .max(60, 'Title cannot exceed 60 characters'),
+    .max(80, 'Title cannot exceed 80 characters'),
   pitch: z
     .string()
     .trim()
     .min(10, 'Tagline must be at least 10 characters')
-    .max(100, 'Tagline cannot exceed 100 characters'),
+    .max(140, 'Tagline cannot exceed 140 characters'),
   description: z
     .string()
     .trim()
@@ -33,6 +34,7 @@ const schema = z.object({
     .max(5000, 'Description cannot exceed 5000 characters'),
   category: z.enum(['Tech', 'Design', 'Social', 'Education', 'Business', 'Other']),
   cover_image: z.string().trim().optional(),
+  ...extraFieldsSchema,
 });
 
 export function SubmitIdeaPage() {
@@ -57,8 +59,10 @@ export function SubmitIdeaPage() {
       description: '',
       category: 'Tech',
       cover_image: '',
+      ...extraFieldsDefaults,
     },
   });
+  const [saveAs, setSaveAs] = useState('published');
 
   const selectedCategory = watch('category');
   const watchedTitle = watch('title');
@@ -108,10 +112,17 @@ export function SubmitIdeaPage() {
         description: values.description.trim(),
         category: values.category,
         tags,
+        status: saveAs,
+        ...extraFieldsPayload(values),
       };
       const res = await api.post('/ideas', payload);
-      toast.success('Your idea has been posted!');
-      navigate(`/ideas/${res.data.idea.id}`);
+      if (saveAs === 'draft') {
+        toast.success('Draft saved. Only you can see it.');
+        navigate(`/ideas/${res.data.idea.id}`);
+      } else {
+        toast.success('Your idea is live! Share it to get your first votes.');
+        navigate(`/ideas/${res.data.idea.id}?posted=1`);
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to post idea.');
     } finally {
@@ -200,21 +211,22 @@ export function SubmitIdeaPage() {
                     Title <span className="text-danger">*</span>
                   </label>
                   <span className="text-ink-muted tabular-nums">
-                    {(watchedTitle || '').length} / 60
+                    {(watchedTitle || '').length} / 80
                   </span>
                 </div>
                 <Input
                   id="idea-title"
                   autoFocus
                   {...register('title')}
-                  placeholder="e.g. TinyStatic or DevPulse"
-                  maxLength={60}
+                  placeholder="e.g. InvoiceRadar: automatic late-payment reminders"
+                  maxLength={80}
                   hasError={!!errors.title}
                   className="h-11"
                 />
                 {errors.title && (
                   <p className="text-xs text-danger">{errors.title.message}</p>
                 )}
+                <DuplicateHint title={watchedTitle} />
               </div>
 
               {/* Tagline / Pitch (max 100) */}
@@ -224,14 +236,14 @@ export function SubmitIdeaPage() {
                     Tagline <span className="text-danger">*</span>
                   </label>
                   <span className="text-ink-muted tabular-nums">
-                    {(watchedPitch || '').length} / 100
+                    {(watchedPitch || '').length} / 140
                   </span>
                 </div>
                 <Input
                   id="idea-pitch"
                   {...register('pitch')}
-                  placeholder="One crisp sentence explaining what it does..."
-                  maxLength={100}
+                  placeholder="One sentence: what it does and for whom"
+                  maxLength={140}
                   hasError={!!errors.pitch}
                   className="h-11"
                 />
@@ -262,6 +274,8 @@ export function SubmitIdeaPage() {
                   <p className="text-xs text-danger">{errors.description.message}</p>
                 )}
               </div>
+
+              <IdeaExtraFields register={register} errors={errors} />
 
               {/* Optional Cover Image URL */}
               <div className="space-y-1.5">
@@ -330,10 +344,22 @@ export function SubmitIdeaPage() {
                 </Button>
                 <Button
                   type="submit"
-                  isLoading={isSubmitting}
+                  variant="secondary"
+                  onClick={() => setSaveAs('draft')}
+                  isLoading={isSubmitting && saveAs === 'draft'}
+                  disabled={isSubmitting}
+                  className="rounded-[8px] text-sm font-semibold px-4 h-11"
+                >
+                  Save draft
+                </Button>
+                <Button
+                  type="submit"
+                  onClick={() => setSaveAs('published')}
+                  isLoading={isSubmitting && saveAs === 'published'}
+                  disabled={isSubmitting}
                   className="rounded-[8px] text-sm font-semibold px-6 h-11"
                 >
-                  Post an idea
+                  Publish idea
                 </Button>
               </div>
             </form>

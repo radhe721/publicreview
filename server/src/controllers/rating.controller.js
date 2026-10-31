@@ -1,5 +1,7 @@
 import db from '../config/db.js';
-import { isVoteBurst } from '../services/ranking.js';
+import { isVoteBurst, MIN_RATINGS_TO_RANK } from '../services/ranking.js';
+import { award } from '../services/reputation.js';
+import { notify } from '../services/notify.js';
 
 export async function getIdeaRatings(req, res, next) {
   try {
@@ -71,7 +73,7 @@ export async function submitOrUpdateRating(req, res, next) {
     const { score, review_text } = req.body;
 
     // Check if idea exists
-    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ?').get(ideaId);
+    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ? AND status = \'published\'').get(ideaId);
     if (!idea) {
       return res.status(404).json({
         success: false,
@@ -102,6 +104,17 @@ export async function submitOrUpdateRating(req, res, next) {
     `;
 
     await db.prepare(upsertSql).run(userId, ideaId, score, review_text || null, held);
+
+    if (!existing && !held) {
+      const saved = await db.prepare('SELECT id FROM ratings WHERE idea_id = ? AND user_id = ?').get(ideaId, userId);
+      await award(userId, 'rating', saved.id);
+      const ideaInfo = await db.prepare('SELECT user_id, title FROM ideas WHERE id = ?').get(ideaId);
+      const countRow = await db.prepare('SELECT COUNT(*) AS n FROM ratings WHERE idea_id = ? AND held = 0').get(ideaId);
+      await notify(ideaInfo.user_id, 'vote', `New ${score}★ rating on "${ideaInfo.title}"`, `/ideas/${ideaId}`);
+      if (Number(countRow.n) === MIN_RATINGS_TO_RANK) {
+        await notify(ideaInfo.user_id, 'milestone', `"${ideaInfo.title}" reached ${MIN_RATINGS_TO_RANK} ratings and is now ranked`, `/ideas/${ideaId}`);
+      }
+    }
 
     // Fetch updated stats from SQL view
     const updatedStats = await db.prepare(`

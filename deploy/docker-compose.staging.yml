@@ -1,0 +1,21 @@
+# Staging: same image, separate database and port, so test accounts and test posts never reach
+# the live site. Run on the VM next to production:
+#   docker compose -p businessliste-staging --env-file .env.staging -f deploy/docker-compose.staging.yml up -d --build
+# Then point a subdomain (e.g. staging.businessliste.com) at port 5002, or open http://<vm-ip>:5002.
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    env_file: ../.env.staging
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_PATH: /data/staging.db
+      # Never send real email or take real payments from staging unless you set test keys in .env.staging.
+    volumes:
+      - staging_data:/data
+    ports:
+      - "5002:5001"
+
+volumes:
+  staging_data:

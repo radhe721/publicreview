@@ -5,7 +5,7 @@ export async function getUserProfile(req, res, next) {
     const userId = Number(req.params.id);
 
     const user = await db.prepare(`
-      SELECT id, name, email, role, avatar_url, bio, role_tag, created_at
+      SELECT id, name, email, role, avatar_url, bio, role_tag, industry, country, reputation, created_at
       FROM users
       WHERE id = ?
     `).get(userId);
@@ -45,6 +45,9 @@ export async function getUserProfile(req, res, next) {
           avatar_url: user.avatar_url,
           bio: user.bio,
           role_tag: user.role_tag,
+          industry: user.industry,
+          country: user.country,
+          reputation: Number(user.reputation || 0),
           created_at: user.created_at,
           // Only show email if user is looking at own profile or is admin
           email: (req.user && (req.user.id === user.id || req.user.role === 'admin')) ? user.email : undefined,
@@ -85,7 +88,7 @@ export async function getUserIdeas(req, res, next) {
         ) AS tags_json
       FROM ideas i
       LEFT JOIN idea_stats_view s ON i.id = s.idea_id
-      WHERE i.user_id = ?
+      WHERE i.user_id = ? AND i.status = 'published' AND i.is_team_seed = 0
       ORDER BY i.created_at DESC
     `;
 
@@ -169,11 +172,13 @@ export async function updateMyProfile(req, res, next) {
     const params = [];
     if (req.body.bio !== undefined) { updates.push('bio = ?'); params.push(req.body.bio || null); }
     if (req.body.role_tag !== undefined) { updates.push('role_tag = ?'); params.push(req.body.role_tag || null); }
+    if (req.body.industry !== undefined) { updates.push('industry = ?'); params.push(req.body.industry || null); }
+    if (req.body.country !== undefined) { updates.push('country = ?'); params.push(req.body.country || null); }
     if (updates.length > 0) {
       updates.push('updated_at = CURRENT_TIMESTAMP');
       await db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params, req.user.id);
     }
-    const user = await db.prepare('SELECT id, name, email, role, avatar_url, bio, role_tag, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = await db.prepare('SELECT id, name, email, role, avatar_url, bio, role_tag, industry, country, created_at FROM users WHERE id = ?').get(req.user.id);
     res.json({ success: true, message: 'Profile updated.', data: { user } });
   } catch (err) {
     next(err);

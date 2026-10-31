@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, X, Sparkles } from 'lucide-react';
 import api from '@/api/client';
 import { toast } from 'sonner';
+import { IdeaExtraFields, extraFieldsSchema, extraFieldsPayload } from '@/components/idea-extra-fields';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = ['Tech', 'Design', 'Social', 'Education', 'Business', 'Other'];
@@ -22,18 +23,22 @@ const schema = z.object({
     .string()
     .trim()
     .min(3, 'Title must be at least 3 characters')
-    .max(60, 'Title cannot exceed 60 characters'),
+    .max(80, 'Title cannot exceed 80 characters'),
   pitch: z
     .string()
     .trim()
     .min(10, 'Tagline must be at least 10 characters')
-    .max(100, 'Tagline cannot exceed 100 characters'),
+    .max(140, 'Tagline cannot exceed 140 characters'),
   description: z
     .string()
     .trim()
     .min(20, 'Please write a brief description (at least 20 characters)')
     .max(5000, 'Description cannot exceed 5000 characters'),
   category: z.enum(['Tech', 'Design', 'Social', 'Education', 'Business', 'Other']),
+  ...extraFieldsSchema,
+  // Older ideas were posted before these fields existed, so editing must not force them.
+  problem: z.string().trim().max(1000).optional(),
+  target_buyer: z.string().trim().max(200).optional(),
 });
 
 export function EditIdeaPage() {
@@ -45,6 +50,7 @@ export function EditIdeaPage() {
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [publishNow, setPublishNow] = useState(false);
 
   const { data, isLoading: ideaLoading } = useQuery({
     queryKey: ['idea-detail', id],
@@ -71,6 +77,12 @@ export function EditIdeaPage() {
         pitch: idea.pitch,
         description: idea.description,
         category: idea.category,
+        problem: idea.problem || '',
+        target_buyer: idea.target_buyer || '',
+        suggested_price: idea.suggested_price ?? '',
+        how_it_works: idea.how_it_works || '',
+        competitors: idea.competitors || '',
+        link_url: idea.link_url || '',
       });
       setTags(idea.tags || []);
     }
@@ -126,8 +138,10 @@ export function EditIdeaPage() {
         description: values.description.trim(),
         category: values.category,
         tags,
+        ...extraFieldsPayload(values),
+        ...(publishNow ? { status: 'published' } : {}),
       });
-      toast.success('Idea updated successfully.');
+      toast.success(publishNow ? 'Your idea is live!' : 'Idea updated successfully.');
       queryClient.invalidateQueries(['idea-detail', id]);
       queryClient.invalidateQueries(['ideas-feed']);
       navigate(`/ideas/${id}`);
@@ -207,13 +221,13 @@ export function EditIdeaPage() {
                     Title <span className="text-danger">*</span>
                   </label>
                   <span className="text-ink-muted tabular-nums">
-                    {(watchedTitle || '').length} / 60
+                    {(watchedTitle || '').length} / 80
                   </span>
                 </div>
                 <Input
                   id="edit-title"
                   {...register('title')}
-                  maxLength={60}
+                  maxLength={80}
                   hasError={!!errors.title}
                   className="h-11"
                 />
@@ -229,13 +243,13 @@ export function EditIdeaPage() {
                     Tagline <span className="text-danger">*</span>
                   </label>
                   <span className="text-ink-muted tabular-nums">
-                    {(watchedPitch || '').length} / 100
+                    {(watchedPitch || '').length} / 140
                   </span>
                 </div>
                 <Input
                   id="edit-pitch"
                   {...register('pitch')}
-                  maxLength={100}
+                  maxLength={140}
                   hasError={!!errors.pitch}
                   className="h-11"
                 />
@@ -266,6 +280,11 @@ export function EditIdeaPage() {
                   <p className="text-xs text-danger">{errors.description.message}</p>
                 )}
               </div>
+
+              <IdeaExtraFields register={register} errors={errors} />
+              {idea?.status === 'published' && (
+                <p className="text-[11px] text-ink-muted">Changes to the title, tagline or description are kept in the public edit history, so ratings stay fair.</p>
+              )}
 
               {/* Tags */}
               <div className="space-y-2">
@@ -310,12 +329,24 @@ export function EditIdeaPage() {
                     Cancel
                   </Button>
                 </Link>
+                {idea?.status === 'draft' && (
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    onClick={() => setPublishNow(true)}
+                    disabled={isSubmitting}
+                    className="rounded-[8px] h-11 px-4 font-semibold text-sm"
+                  >
+                    Save and publish
+                  </Button>
+                )}
                 <Button
                   type="submit"
+                  onClick={() => setPublishNow(false)}
                   isLoading={isSubmitting}
                   className="rounded-[8px] h-11 px-6 font-semibold text-sm"
                 >
-                  Save changes
+                  {idea?.status === 'draft' ? 'Save draft' : 'Save changes'}
                 </Button>
               </div>
             </form>

@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from './ui/button';
 import { AuthorAvatar } from './ui/author-avatar';
+import { NotificationBell } from './notification-bell';
 import {
   Sun,
   Moon,
@@ -100,10 +101,16 @@ export function Navbar({ onOpenCommandPalette }) {
           icon: Calendar,
         },
         {
-          title: 'Categories',
-          desc: 'Filter by Tech, Design, Social, Education, and more',
-          path: '/feed#categories',
+          title: 'Needs votes',
+          desc: 'New ideas that need 5 ratings to rank',
+          path: '/feed?sort=needs_votes',
           icon: Layers,
+        },
+        {
+          title: 'Launched from BusinessListe',
+          desc: 'Ideas that became products, with their revenue',
+          path: '/launched',
+          icon: Trophy,
         },
       ],
     },
@@ -163,13 +170,19 @@ export function Navbar({ onOpenCommandPalette }) {
     },
     community: {
       label: 'Community',
-      path: '/feed#discussions',
+      path: '/discussions',
       items: [
         {
           title: 'Trending Discussions',
-          desc: 'Community conversations and architectural feedback',
-          path: '/feed#discussions',
+          desc: 'Ideas with the most recent comments',
+          path: '/discussions',
           icon: MessageSquare,
+        },
+        {
+          title: 'Co-founder board',
+          desc: 'Find someone to build with',
+          path: '/cofounders',
+          icon: Compass,
         },
         {
           title: 'Reviewer Guidelines',
@@ -179,8 +192,8 @@ export function Navbar({ onOpenCommandPalette }) {
         },
         {
           title: 'Top Contributors',
-          desc: 'Builders and reviewers shaping the ecosystem',
-          path: '/leaderboard',
+          desc: 'Raters with the most reputation this month',
+          path: '/contributors',
           icon: Award,
         },
       ],
@@ -199,6 +212,12 @@ export function Navbar({ onOpenCommandPalette }) {
           title: 'Scoring Methodology',
           desc: 'Minimum 5 ratings, weighted Bayesian score',
           path: '/about#ranking',
+          icon: Sparkles,
+        },
+        {
+          title: 'Pricing',
+          desc: 'Free, Validation Report, Pro and Featured',
+          path: '/pricing',
           icon: Sparkles,
         },
         {
@@ -353,6 +372,7 @@ export function Navbar({ onOpenCommandPalette }) {
           </Link>
 
           {/* User Account / Sign In */}
+          {isAuthenticated && <NotificationBell />}
           {isAuthenticated ? (
             <div className="relative">
               <button

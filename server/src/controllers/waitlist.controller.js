@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import db from '../config/db.js';
 
 export async function joinWaitlist(req, res, next) {
@@ -7,10 +8,10 @@ export async function joinWaitlist(req, res, next) {
     // Same response whether or not the email was already on the list, so this endpoint
     // can't be used to check who has signed up.
     await db.prepare(`
-      INSERT INTO waitlist_signups (email, name, use_case, source)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(email) DO NOTHING
-    `).run(email, name || null, use_case || null, source || null);
+      INSERT INTO waitlist_signups (email, name, use_case, source, unsubscribe_token)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(email) DO UPDATE SET unsubscribed_at = NULL
+    `).run(email, name || null, use_case || null, source || null, crypto.randomBytes(24).toString('hex'));
 
     const row = await db.prepare('SELECT COUNT(*) AS total FROM waitlist_signups').get();
 

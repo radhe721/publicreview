@@ -111,8 +111,23 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/feed#discussions" className="hover:text-ink transition-colors">
-                  Community Discussions
+                <Link to="/discussions" className="hover:text-ink transition-colors">
+                  Discussions
+                </Link>
+              </li>
+              <li>
+                <Link to="/cofounders" className="hover:text-ink transition-colors">
+                  Co-founder board
+                </Link>
+              </li>
+              <li>
+                <Link to="/contributors" className="hover:text-ink transition-colors">
+                  Top Contributors
+                </Link>
+              </li>
+              <li>
+                <Link to="/launched" className="hover:text-ink transition-colors">
+                  Launched products
                 </Link>
               </li>
               <li>
@@ -147,7 +162,12 @@ export function Footer() {
             <span>Find out if real people would pay for your idea, before you build it.</span>
           </div>
           <div>
-            <span>Every number on the site is real. <Link to="/about" className="hover:text-ink underline">How it works</Link></span>
+            <span className="flex flex-wrap gap-3">
+              <Link to="/pricing" className="hover:text-ink underline">Pricing</Link>
+              <Link to="/terms" className="hover:text-ink underline">Terms</Link>
+              <Link to="/privacy" className="hover:text-ink underline">Privacy</Link>
+              <Link to="/cookies" className="hover:text-ink underline">Cookies</Link>
+            </span>
           </div>
         </div>
       </div>

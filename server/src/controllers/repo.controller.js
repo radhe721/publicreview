@@ -7,6 +7,7 @@ const REPO_SELECT = `
     r.topics, r.note, r.created_at, r.license, r.pushed_at, r.category, r.business_model,
     u.id AS sharer_id, u.name AS sharer_name, u.avatar_url AS sharer_avatar,
     (SELECT COUNT(*) FROM repo_upvotes v WHERE v.repo_id = r.id) AS upvotes,
+    (SELECT COUNT(*) FROM repo_comments c WHERE c.repo_id = r.id AND c.hidden = 0) AS comments_count,
     EXISTS(SELECT 1 FROM repo_upvotes v WHERE v.repo_id = r.id AND v.user_id = ?) AS has_upvoted
   FROM shared_repos r
   JOIN users u ON r.user_id = u.id
@@ -36,6 +37,7 @@ function formatRepo(r) {
       avatar_url: r.sharer_avatar
     },
     upvotes: Number(r.upvotes),
+    comments_count: Number(r.comments_count || 0),
     has_upvoted: Boolean(Number(r.has_upvoted))
   };
 }
@@ -51,7 +53,7 @@ export async function getRepos(req, res, next) {
     const offset = (page - 1) * limit;
     const viewerId = req.user?.id || null;
 
-    const conditions = [];
+    const conditions = ['r.hidden = 0'];
     const params = [];
     if (search) {
       conditions.push('(r.full_name LIKE ? OR r.description LIKE ? OR r.note LIKE ? OR r.topics LIKE ? OR r.language LIKE ?)');

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/client';
 import { Button } from '@/components/ui/button';
@@ -374,9 +374,29 @@ export function DemandSignalPanel({ ideaId, ideaTitle, isAuthor, isAuthenticated
 
   const demand = data?.data?.demand;
   const mySignal = data?.data?.my_signal;
+  const navigate = useNavigate();
+  const pendingKey = `pending_vote:${ideaId}`;
 
   const handleSaved = (result) => {
     queryClient.setQueryData(queryKey, { success: true, data: result });
+  };
+
+  // Vote first, sign in after (spec 9.2): a vote picked while signed out is sent right after sign-in.
+  useEffect(() => {
+    if (!isAuthenticated || isAuthor || !data) return;
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem(pendingKey) || 'null'); } catch { pending = null; }
+    if (!pending) return;
+    localStorage.removeItem(pendingKey);
+    if (mySignal) return;
+    api.put(`/ideas/${ideaId}/demand`, pending)
+      .then((res) => { handleSaved(res.data); toast.success('Your vote was counted. Thanks!'); })
+      .catch((err) => toast.error(err.message || 'Could not save your vote.'));
+  }, [isAuthenticated, isAuthor, Boolean(data)]);
+
+  const voteSignedOut = (intent) => {
+    localStorage.setItem(pendingKey, JSON.stringify({ intent, price_tier: null, join_waitlist: false }));
+    navigate(`/login?redirect=${encodeURIComponent(`/ideas/${ideaId}`)}`);
   };
 
   return (
@@ -390,12 +410,23 @@ export function DemandSignalPanel({ ideaId, ideaTitle, isAuthor, isAuthenticated
         ) : isAuthor ? null : isAuthenticated ? (
           <SignalForm ideaId={ideaId} mySignal={mySignal} onSaved={handleSaved} />
         ) : (
-          <div className="p-6 rounded-[12px] border border-dashed border-border bg-surface text-center space-y-3">
-            <p className="text-sm font-semibold text-ink">Would you pay for this?</p>
-            <p className="text-xs text-ink-muted">Sign in with Google or GitHub to vote and join the launch waitlist. It takes a few seconds.</p>
-            <Link to={`/login?redirect=${encodeURIComponent(`/ideas/${ideaId}`)}`}>
-              <Button size="sm" className="rounded-[8px] mt-1">Sign in to vote</Button>
-            </Link>
+          <div className="p-5 sm:p-6 rounded-[12px] border border-border bg-surface space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink">Would you pay for this?</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {INTENTS.map(({ id, label, hint, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => voteSignedOut(id)}
+                  className="p-3 rounded-[8px] border border-border bg-surface hover:border-accent-strong text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  <Icon className="w-4 h-4 mb-1.5 text-ink-muted" />
+                  <span className="block text-sm font-semibold">{label}</span>
+                  <span className="block text-[11px] text-ink-muted">{hint}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-ink-muted">Tap your answer, then sign in with Google or GitHub (one click) so each person votes once.</p>
           </div>
         )}
       </div>

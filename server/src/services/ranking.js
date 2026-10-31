@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { REPUTATION_WEIGHT_SQL } from './reputation.js';
 
 // An idea needs this many (non-held) ratings before it can appear in any Top list.
 export const MIN_RATINGS_TO_RANK = 5;
@@ -16,12 +17,13 @@ export const BURST_THRESHOLD = Number(process.env.VOTE_BURST_THRESHOLD || 5);
 export const BURST_WINDOW_MINUTES = 10;
 
 // SQL weight for a rating `r` by user `u`.
+// Higher reputation levels' votes carry more weight (Trusted 1.25x, Top 1.5x).
 export const RATING_WEIGHT_SQL = `
-  CASE
+  (CASE
     WHEN r.created_at < datetime(u.created_at, '+1 day') THEN ${LOW_WEIGHT}
     WHEN COALESCE(TRIM(u.bio), '') = '' AND u.role_tag IS NULL THEN ${LOW_WEIGHT}
     ELSE 1.0
-  END`;
+  END * ${REPUTATION_WEIGHT_SQL})`;
 
 // Site-wide average of counted ratings (3.0 when there are none yet).
 export const SITE_MEAN_SQL = '(SELECT COALESCE(AVG(CAST(score AS REAL)), 3.0) FROM ratings WHERE held = 0)';

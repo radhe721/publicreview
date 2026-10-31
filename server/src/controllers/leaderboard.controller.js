@@ -53,7 +53,7 @@ export async function getLeaderboard(req, res, next) {
         )
       ) ws ON ws.idea_id = i.id
       LEFT JOIN (${DEMAND_TOTALS_SQL}) dm ON dm.idea_id = i.id
-      WHERE ws.n >= ${MIN_RATINGS_TO_RANK}
+      WHERE ws.n >= ${MIN_RATINGS_TO_RANK} AND i.status = 'published'
       ORDER BY ranking_score DESC, ws.n DESC, i.created_at DESC, i.id ASC
       LIMIT ?
     `;

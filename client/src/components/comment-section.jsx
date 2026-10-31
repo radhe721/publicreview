@@ -7,13 +7,48 @@ import { formatRelativeTime } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import api from '@/api/client';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowBigUp, Flag, CornerDownRight } from 'lucide-react';
 
 export function CommentSection({ ideaId, comments = [], onCommentAdded, onCommentDeleted }) {
   const { user, isAuthenticated, isAdmin } = useAuth();
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [votes, setVotes] = useState({});
+
+  const toggleUpvote = async (comment) => {
+    const current = votes[comment.id] || { upvotes: comment.upvotes || 0, has_upvoted: comment.has_upvoted };
+    try {
+      const res = current.has_upvoted
+        ? await api.delete(`/ideas/comments/${comment.id}/upvote`)
+        : await api.post(`/ideas/comments/${comment.id}/upvote`);
+      setVotes({ ...votes, [comment.id]: res.data });
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const reportComment = async (comment) => {
+    try {
+      await api.post('/content-reports', { target_type: 'comment', target_id: comment.id, reason: 'Reported from the comment list' });
+      toast.success('Thanks. A moderator will review it.');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  // Replies sit directly under their parent comment.
+  const ordered = (() => {
+    const byParent = {};
+    comments.forEach((c) => { (byParent[c.parent_id || 0] ||= []).push(c); });
+    const out = [];
+    const walk = (pid, depth) => (byParent[pid] || []).forEach((c) => { out.push({ ...c, depth }); walk(c.id, Math.min(depth + 1, 3)); });
+    walk(0, 0);
+    // Replies whose parent was deleted or hidden still show, at the top level.
+    comments.forEach((c) => { if (!out.some((o) => o.id === c.id)) out.push({ ...c, depth: 0 }); });
+    return out;
+  })();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,8 +56,9 @@ export function CommentSection({ ideaId, comments = [], onCommentAdded, onCommen
 
     setIsSubmitting(true);
     try {
-      const res = await api.post(`/ideas/${ideaId}/comments`, { content: content.trim() });
+      const res = await api.post(`/ideas/${ideaId}/comments`, { content: content.trim(), parent_id: replyTo?.id || null });
       setContent('');
+      setReplyTo(null);
       toast.success('Comment posted.');
       if (onCommentAdded) {
         onCommentAdded(res.data.comment);
@@ -66,6 +102,12 @@ export function CommentSection({ ideaId, comments = [], onCommentAdded, onCommen
               <label htmlFor="comment-textarea" className="sr-only">
                 Add a comment
               </label>
+              {replyTo && (
+                <p className="text-xs text-ink-muted flex items-center gap-2">
+                  <CornerDownRight className="w-3.5 h-3.5" /> Replying to <strong className="text-ink">{replyTo.user?.name}</strong>
+                  <button type="button" onClick={() => setReplyTo(null)} className="underline">cancel</button>
+                </p>
+              )}
               <Textarea
                 id="comment-textarea"
                 value={content}
@@ -105,11 +147,13 @@ export function CommentSection({ ideaId, comments = [], onCommentAdded, onCommen
             No comments yet. Start the discussion!
           </div>
         ) : (
-          comments.map((comment) => {
+          ordered.map((comment) => {
             const canDelete = user && (user.id === comment.user?.id || isAdmin);
+            const vote = votes[comment.id] || { upvotes: comment.upvotes || 0, has_upvoted: comment.has_upvoted };
             return (
               <div
                 key={comment.id}
+                style={{ marginLeft: `${comment.depth * 24}px` }}
                 className="p-4 sm:p-5 rounded-[12px] border border-border bg-surface space-y-2.5 transition-colors"
               >
                 <div className="flex items-center justify-between gap-2 text-xs">
@@ -148,6 +192,28 @@ export function CommentSection({ ideaId, comments = [], onCommentAdded, onCommen
                 <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed pl-7">
                   {comment.content}
                 </p>
+                <div className="flex items-center gap-3 pl-7 text-xs text-ink-muted">
+                  <button
+                    type="button"
+                    disabled={!isAuthenticated}
+                    onClick={() => toggleUpvote(comment)}
+                    aria-pressed={Boolean(vote.has_upvoted)}
+                    aria-label={`Upvote comment, ${vote.upvotes} upvotes`}
+                    className={`inline-flex items-center gap-1 hover:text-ink disabled:opacity-60 ${vote.has_upvoted ? 'text-accent-strong font-semibold' : ''}`}
+                  >
+                    <ArrowBigUp className="w-4 h-4" /> <span className="tabular-nums">{vote.upvotes}</span>
+                  </button>
+                  {isAuthenticated && (
+                    <button type="button" onClick={() => { setReplyTo(comment); document.getElementById('comment-textarea')?.focus(); }} className="hover:text-ink">
+                      Reply
+                    </button>
+                  )}
+                  {isAuthenticated && user?.id !== comment.user?.id && (
+                    <button type="button" onClick={() => reportComment(comment)} className="hover:text-danger inline-flex items-center gap-1" aria-label="Report comment">
+                      <Flag className="w-3 h-3" /> Report
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })

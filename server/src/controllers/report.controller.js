@@ -26,6 +26,12 @@ export async function createReport(req, res, next) {
 
     const result = await stmt.run(reporterId, idea_id, reason);
 
+    // Auto-hide after 3 open reports until a moderator reviews it.
+    const open = await db.prepare("SELECT COUNT(*) AS n FROM reports WHERE idea_id = ? AND status = 'pending'").get(idea_id);
+    if (Number(open?.n || 0) >= 3) {
+      await db.prepare("UPDATE ideas SET status = 'hidden' WHERE id = ? AND status = 'published'").run(idea_id);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Report submitted. Our moderation team will review it shortly.',

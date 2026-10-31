@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import { isVoteBurst } from '../services/ranking.js';
+import { notify } from '../services/notify.js';
 
 // Monthly price ranges a voter can pick, with the midpoint used for the median.
 export const PRICE_TIERS = [
@@ -119,7 +120,7 @@ export async function submitDemand(req, res, next) {
     const userId = req.user.id;
     const { intent, price_tier, join_waitlist } = req.body;
 
-    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ?').get(ideaId);
+    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ? AND status = \'published\'').get(ideaId);
     if (!idea) {
       return res.status(404).json({ success: false, error: { message: 'Idea not found.' } });
     }
@@ -144,6 +145,11 @@ export async function submitDemand(req, res, next) {
         join_waitlist = excluded.join_waitlist,
         updated_at = CURRENT_TIMESTAMP
     `).run(userId, ideaId, intent, price_tier, join_waitlist ? 1 : 0, held);
+
+    if (!existing && !held) {
+      const label = { pass: 'Not for me', maybe: "I'd try it", would_pay: "I'd pay for it" }[intent];
+      await notify(idea.user_id, 'vote', `New vote on your idea: ${label}`, `/ideas/${ideaId}`);
+    }
 
     res.json({
       success: true,
@@ -183,7 +189,7 @@ export async function deleteDemand(req, res, next) {
 export async function getWaitlist(req, res, next) {
   try {
     const ideaId = Number(req.params.id);
-    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ?').get(ideaId);
+    const idea = await db.prepare('SELECT id, user_id FROM ideas WHERE id = ? AND status = \'published\'').get(ideaId);
     if (!idea) {
       return res.status(404).json({ success: false, error: { message: 'Idea not found.' } });
     }

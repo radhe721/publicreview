@@ -10,6 +10,13 @@ import {
 import { getFeedback, submitFeedback, deleteFeedback } from '../controllers/feedback.controller.js';
 import { voteLimiter, ideaPostLimiter } from '../middleware/rateLimiter.js';
 import {
+  similarTitles, similarIdeas, relatedRepos, getRevisions, myDrafts, trackView, getAnalytics,
+  getBuilders, setBuildInterest, removeBuildInterest, markFeedbackHelpful, markLaunched, removeLaunch,
+  verifyRevenue, listLaunches, getLanding, landingSignup, landingSignups
+} from '../controllers/ideaExtras.controller.js';
+import { getIdeaReport } from '../controllers/payments.controller.js';
+import { toggleCommentUpvote } from '../controllers/community.controller.js';
+import {
   getIdeaRatings,
   getMyIdeaRating,
   submitOrUpdateRating,
@@ -36,13 +43,20 @@ import {
   paginationQuerySchema,
   demandSignalSchema,
   feedbackSchema,
-  teamSeedSchema
+  teamSeedSchema,
+  launchSchema,
+  verifyRevenueSchema,
+  buildInterestSchema,
+  landingSignupSchema
 } from '../validations/index.js';
 
 const router = Router();
 
-// Ideas Endpoints
+// Ideas Endpoints (fixed paths before /:id)
 router.get('/', validate(paginationQuerySchema, 'query'), getIdeas);
+router.get('/similar-titles', similarTitles);
+router.get('/drafts/mine', requireAuth, myDrafts);
+router.get('/launches', listLaunches);
 router.get('/:id', optionalAuth, getIdeaById);
 router.post('/', requireAuth, ideaPostLimiter, validate(createIdeaSchema), createIdea);
 router.put('/:id', requireAuth, validate(updateIdeaSchema), updateIdea);
@@ -66,9 +80,35 @@ router.get('/:id/feedback', optionalAuth, getFeedback);
 router.put('/:id/feedback', requireAuth, voteLimiter, validate(feedbackSchema), submitFeedback);
 router.delete('/:id/feedback', requireAuth, deleteFeedback);
 
+// Discovery, history and analytics
+router.get('/:id/similar', similarIdeas);
+router.get('/:id/repos', relatedRepos);
+router.get('/:id/revisions', optionalAuth, getRevisions);
+router.post('/:id/view', trackView);
+router.get('/:id/analytics', requireAuth, getAnalytics);
+router.get('/:id/report', requireAuth, getIdeaReport);
+
+// Builders
+router.get('/:id/build', optionalAuth, getBuilders);
+router.put('/:id/build', requireAuth, validate(buildInterestSchema), setBuildInterest);
+router.delete('/:id/build', requireAuth, removeBuildInterest);
+router.post('/:id/feedback/:userId/helpful', requireAuth, markFeedbackHelpful);
+
+// Launch tracking
+router.put('/:id/launch', requireAuth, validate(launchSchema), markLaunched);
+router.delete('/:id/launch', requireAuth, removeLaunch);
+router.post('/:id/verify-revenue', requireAuth, voteLimiter, validate(verifyRevenueSchema), verifyRevenue);
+
+// Pro fake-door landing page
+router.get('/:id/landing', getLanding);
+router.post('/:id/landing/signup', voteLimiter, validate(landingSignupSchema), landingSignup);
+router.get('/:id/landing/signups', requireAuth, landingSignups);
+
 // Comments Endpoints on an Idea
-router.get('/:id/comments', getIdeaComments);
+router.get('/:id/comments', optionalAuth, getIdeaComments);
 router.post('/:id/comments', requireAuth, validate(commentSchema), createComment);
 router.delete('/comments/:commentId', requireAuth, deleteComment);
+router.post('/comments/:commentId/upvote', requireAuth, toggleCommentUpvote);
+router.delete('/comments/:commentId/upvote', requireAuth, toggleCommentUpvote);
 
 export default router;

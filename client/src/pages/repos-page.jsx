@@ -264,6 +264,8 @@ function RepoRow({ repo, onChanged }) {
             </>
           )}
         </div>
+
+        <RepoExtras repo={repo} />
       </div>
 
       <button
@@ -283,6 +285,69 @@ function RepoRow({ repo, onChanged }) {
         <span className="text-xs font-bold tabular-nums">{upvotes}</span>
       </button>
     </article>
+  );
+}
+
+// Comments, "ideas it could power" and reporting, opened on demand.
+function RepoExtras({ repo }) {
+  const { isAuthenticated } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: commentsData } = useQuery({ queryKey: ['repo-comments', repo.id], queryFn: () => api.get(`/repos/${repo.id}/comments`), enabled: open });
+  const { data: ideasData } = useQuery({ queryKey: ['repo-ideas', repo.id], queryFn: () => api.get(`/repos/${repo.id}/ideas`), enabled: open });
+  const comments = commentsData?.data?.comments || [];
+  const ideas = ideasData?.data?.ideas || [];
+
+  const post = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await api.post(`/repos/${repo.id}/comments`, { content: text.trim() });
+      setText('');
+      queryClient.invalidateQueries({ queryKey: ['repo-comments', repo.id] });
+    } catch (err) { toast.error(err.message); } finally { setBusy(false); }
+  };
+  const report = async () => {
+    try {
+      await api.post('/content-reports', { target_type: 'repo', target_id: repo.id, reason: 'Reported from the Open-Source SaaS list' });
+      toast.success('Thanks. A moderator will review it.');
+    } catch (err) { toast.error(err.message); }
+  };
+
+  return (
+    <div className="pt-1 text-xs">
+      <div className="flex items-center gap-3 text-ink-muted">
+        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="hover:text-ink font-semibold">
+          {open ? 'Hide' : `Comments (${repo.comments_count || 0}) and ideas it could power`}
+        </button>
+        {isAuthenticated && <button type="button" onClick={report} className="hover:text-danger">Report</button>}
+      </div>
+      {open && (
+        <div className="mt-2 space-y-3 p-3 rounded-[8px] border border-border bg-bg">
+          <div>
+            <p className="font-bold text-ink mb-1">Ideas on BusinessListe it could power</p>
+            {ideas.length === 0 ? <p className="text-ink-muted">No matching ideas yet.</p> : (
+              <ul className="space-y-0.5">{ideas.map((i) => <li key={i.id}><Link to={`/ideas/${i.id}`} className="text-accent-strong hover:underline">{i.title}</Link></li>)}</ul>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <p className="font-bold text-ink">Comments</p>
+            {comments.length === 0 && <p className="text-ink-muted">No comments yet.</p>}
+            {comments.map((c) => (
+              <p key={c.id}><Link to={`/profile/${c.user.id}`} className="font-semibold text-ink">{c.user.name}</Link>: <span className="text-ink">{c.content}</span> <span className="text-ink-faint">{formatRelativeTime(c.created_at)}</span></p>
+            ))}
+            {isAuthenticated && (
+              <form onSubmit={post} className="flex gap-2 pt-1">
+                <Input value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} placeholder="Add a comment" aria-label="Add a comment" className="h-9 text-xs" />
+                <Button size="sm" type="submit" isLoading={busy} disabled={text.trim().length < 2} className="h-9 rounded-[8px]">Post</Button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

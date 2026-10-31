@@ -11,6 +11,8 @@ import { StarRatingWidget } from '@/components/star-rating-widget';
 import { CommentSection } from '@/components/comment-section';
 import { DemandSignalPanel } from '@/components/demand-signal-panel';
 import { StructuredFeedback } from '@/components/structured-feedback';
+import { ShareKit } from '@/components/share-kit';
+import { IdeaDetailsBlock, SimilarIdeas, RelatedRepos, EditHistory, BuildInterest, LaunchPanel, FounderTools } from '@/components/idea-panels';
 import { ReportModal } from '@/components/report-modal';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,12 @@ export function IdeaDetailPage() {
   const ratings = ratingsData?.data?.ratings || [];
 
   const isAuthor = user && idea && user.id === idea.author?.id;
+
+  // Count one view per page load (referrer host only), for founders' Pro analytics.
+  useEffect(() => {
+    if (!idea?.id || idea.status !== 'published') return;
+    api.post(`/ideas/${idea.id}/view`, { referrer: document.referrer || '' }).catch(() => null);
+  }, [idea?.id, idea?.status]);
   const canManage = isAuthor || isAdmin;
 
   const setTab = (tab) => {
@@ -163,6 +171,19 @@ export function IdeaDetailPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> Back to ideas
         </Link>
 
+        {idea.status === 'draft' && (
+          <div className="p-4 rounded-[12px] border border-dashed border-border-strong bg-surface text-sm flex flex-wrap items-center justify-between gap-3">
+            <span><strong className="text-ink">Draft.</strong> <span className="text-ink-muted">Only you can see this idea.</span></span>
+            <Link to={`/ideas/${idea.id}/edit`}><Button size="sm" className="rounded-[8px]">Edit and publish</Button></Link>
+          </div>
+        )}
+        {idea.status === 'hidden' && (
+          <div className="p-4 rounded-[12px] border border-danger text-sm text-danger">Hidden after reports. A moderator will review it.</div>
+        )}
+        {idea.status === 'published' && isAuthor && (searchParams.get('posted') === '1' || totalRatings < 5) && (
+          <ShareKit idea={idea} title={searchParams.get('posted') === '1' ? 'Your idea is live. Get your first votes' : 'Bring voters: share your idea'} />
+        )}
+
         {/* Header Block: Large Cover Tile (72px), Title, Pitch, Pills, Author, Date, Rate & Share buttons */}
         <section className="space-y-6 border-b border-border pb-8">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
@@ -208,6 +229,10 @@ export function IdeaDetailPage() {
                 <p className="text-sm sm:text-base text-ink-muted leading-relaxed">
                   {idea.pitch}
                 </p>
+                {idea.is_featured && (
+                  <span className="inline-block text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-soft text-accent-strong">Featured</span>
+                )}
+                <EditHistory ideaId={idea.id} />
               </div>
             </div>
 
@@ -333,6 +358,7 @@ export function IdeaDetailPage() {
               <div className="text-sm sm:text-base text-ink leading-relaxed whitespace-pre-wrap">
                 {idea.description}
               </div>
+              <IdeaDetailsBlock idea={idea} />
 
               {idea.tags && idea.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-3">
@@ -397,6 +423,14 @@ export function IdeaDetailPage() {
                 </div>
               </div>
             </section>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <BuildInterest ideaId={idea.id} isAuthor={isAuthor} isAuthenticated={isAuthenticated} />
+              <LaunchPanel idea={idea} canManage={canManage} />
+              {isAuthor && idea.status === 'published' && <FounderTools idea={idea} />}
+              <SimilarIdeas ideaId={idea.id} />
+              <RelatedRepos ideaId={idea.id} />
+            </div>
 
             {/* Structured feedback: four quick questions */}
             <section className="space-y-4">
