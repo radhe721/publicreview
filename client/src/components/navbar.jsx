@@ -232,9 +232,9 @@ export function Navbar({ onOpenCommandPalette }) {
 
   return (
     <header className="sticky top-0 z-40 w-full h-16 min-h-[64px] border-b border-border bg-bg transition-colors">
-      <div className="max-w-[1140px] mx-auto h-full flex items-center justify-between px-4 sm:px-6">
+      <div className="max-w-[1280px] 2xl:max-w-[1440px] mx-auto h-full flex items-center justify-between gap-3 px-4 sm:px-6">
         {/* Left Section: Wordmark & Navigation Dropdowns */}
-        <div className="flex items-center gap-6 lg:gap-8">
+        <div className="flex items-center gap-6 lg:gap-4 xl:gap-8 min-w-0">
           <Link
             to="/"
             className="flex items-center gap-2.5 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring rounded-[8px]"
@@ -251,7 +251,7 @@ export function Navbar({ onOpenCommandPalette }) {
           </Link>
 
           {/* Desktop Nav Items with Hover Dropdowns */}
-          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-1">
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-0.5 xl:gap-1">
             {Object.entries(navDropdowns).map(([key, group]) => {
               const isOpen = activeDropdown === key;
               return (
@@ -265,7 +265,7 @@ export function Navbar({ onOpenCommandPalette }) {
                     to={group.path}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-[8px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                        'flex items-center gap-1 px-2 xl:px-3 py-2 text-sm font-medium rounded-[8px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                         isOpen || isActive
                           ? 'text-ink bg-surface-hover'
                           : 'text-ink-muted hover:text-ink hover:bg-surface-hover'
@@ -324,30 +324,30 @@ export function Navbar({ onOpenCommandPalette }) {
                 to="/admin"
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-[8px] transition-colors',
+                    'flex items-center gap-1.5 px-2 xl:px-3 py-2 text-sm font-medium rounded-[8px] transition-colors',
                     isActive ? 'text-accent-strong bg-accent-soft' : 'text-accent-strong hover:bg-surface-hover'
                   )
                 }
               >
                 <Shield className="w-3.5 h-3.5" />
-                <span>Moderation</span>
+                <span className="lg:sr-only xl:not-sr-only">Moderation</span>
               </NavLink>
             )}
           </nav>
         </div>
 
         {/* Center/Right: Search field & Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-2 xl:gap-3 shrink-0">
           {/* Search field with "/" shortcut hint */}
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="hidden sm:flex items-center gap-2 h-10 px-3 rounded-[8px] border border-border bg-surface text-xs text-ink-muted hover:border-border-strong hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring select-none min-w-[180px] lg:min-w-[220px]"
+            className="hidden lg:flex items-center gap-2 h-10 rounded-[8px] border border-border bg-surface text-xs text-ink-muted hover:border-border-strong hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring select-none w-10 px-0 justify-center 2xl:w-auto 2xl:px-3 2xl:justify-start 2xl:min-w-[200px]"
             aria-label="Search ideas (Press / to focus)"
           >
             <Search className="w-3.5 h-3.5 text-ink-faint shrink-0" />
-            <span className="flex-1 text-left text-ink-faint">Search ideas...</span>
-            <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-surface-muted border border-border rounded-[4px] text-ink-muted">
+            <span className="flex-1 text-left text-ink-faint hidden 2xl:inline">Search ideas...</span>
+            <kbd className="hidden 2xl:inline px-1.5 py-0.5 text-[11px] font-mono bg-surface-muted border border-border rounded-[4px] text-ink-muted">
               /
             </kbd>
           </button>
@@ -364,10 +364,10 @@ export function Navbar({ onOpenCommandPalette }) {
           </button>
 
           {/* "Post an idea" Verb Button */}
-          <Link to="/submit" className="hidden sm:inline-flex">
-            <Button size="default" className="h-10 min-h-[40px] px-3.5 text-sm font-semibold rounded-[8px] gap-1.5">
+          <Link to="/submit" className="hidden sm:inline-flex" title="Post an idea">
+            <Button size="default" className="h-10 min-h-[40px] px-3.5 lg:px-3 xl:px-3.5 text-sm font-semibold rounded-[8px] gap-1.5">
               <Plus className="w-4 h-4" />
-              <span>Post an idea</span>
+              <span className="lg:sr-only xl:not-sr-only">Post an idea</span>
             </Button>
           </Link>
 
