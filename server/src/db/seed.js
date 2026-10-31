@@ -22,6 +22,7 @@ export async function seedDatabase() {
     await tx.prepare('DELETE FROM shared_repos').run();
     await tx.prepare('DELETE FROM waitlist_signups').run();
     await tx.prepare('DELETE FROM demand_signals').run();
+    await tx.prepare('DELETE FROM idea_feedback').run();
     await tx.prepare('DELETE FROM oauth_accounts').run();
     await tx.prepare('DELETE FROM reports').run();
     await tx.prepare('DELETE FROM comments').run();
@@ -323,8 +324,8 @@ export async function seedDatabase() {
   ];
 
   const insertIdea = db.prepare(`
-    INSERT INTO ideas (user_id, title, pitch, description, category, created_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now', ?))
+    INSERT INTO ideas (user_id, title, pitch, description, category, created_at, is_team_seed)
+    VALUES (?, ?, ?, ?, ?, datetime('now', ?), 1)
   `);
 
   const insertIdeaTag = db.prepare(`

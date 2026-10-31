@@ -25,6 +25,7 @@ import userRoutes from './routes/user.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import waitlistRoutes from './routes/waitlist.routes.js';
 import reposRoutes from './routes/repos.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 export const app = express();
 
@@ -135,6 +136,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/waitlist', waitlistRoutes);
 app.use('/api/v1/repos', reposRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // In production or when client/dist exists, serve frontend static assets & SPA fallback
 if (fs.existsSync(clientDistPath)) {

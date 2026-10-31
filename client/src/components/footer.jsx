@@ -116,13 +116,23 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/feed#guidelines" className="hover:text-ink transition-colors">
-                  Critique Guidelines
+                <Link to="/about#guidelines" className="hover:text-ink transition-colors">
+                  Reviewer Guidelines
                 </Link>
               </li>
               <li>
-                <Link to="/feed#fairness" className="hover:text-ink transition-colors">
-                  Early-Hours Fairness
+                <Link to="/about#ranking" className="hover:text-ink transition-colors">
+                  How ranking works
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-ink transition-colors">
+                  About BusinessListe
+                </Link>
+              </li>
+              <li>
+                <Link to="/repos" className="hover:text-ink transition-colors">
+                  Open-Source SaaS
                 </Link>
               </li>
             </ul>
@@ -134,10 +144,10 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-ink">BusinessListe</span>
             <span>•</span>
-            <span>A clean, ranked-list community where the list is the hero.</span>
+            <span>Find out if real people would pay for your idea, before you build it.</span>
           </div>
           <div>
-            <span>Typeset in Plus Jakarta Sans. Built with tokens and zero hardcoded colors.</span>
+            <span>Every number on the site is real. <Link to="/about" className="hover:text-ink underline">How it works</Link></span>
           </div>
         </div>
       </div>

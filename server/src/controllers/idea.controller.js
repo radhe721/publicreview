@@ -1,4 +1,12 @@
 import db from '../config/db.js';
+import {
+  weightedRatingsSql,
+  RANKING_SCORE_SQL,
+  DEMAND_TOTALS_SQL,
+  MIN_RATINGS_TO_RANK,
+  rankingStats,
+  displayAuthor
+} from '../services/ranking.js';
 
 export async function getIdeas(req, res, next) {
   try {
@@ -52,20 +60,28 @@ export async function getIdeas(req, res, next) {
       conditions.push("i.created_at >= datetime('now', '-30 days', 'localtime')");
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
     const normalizedSort = (sort || 'top').toLowerCase().replace(/\s+/g, '_');
-    let orderBy = 's.avg_score DESC, s.total_ratings DESC, i.created_at DESC';
-    if (normalizedSort === 'newest') {
-      orderBy = 'i.created_at DESC';
+    // Top: ideas with enough ratings first (by weighted Bayesian score), then the rest by score.
+    let orderBy = `(COALESCE(ws.n, 0) >= ${MIN_RATINGS_TO_RANK}) DESC, ranking_score DESC, COALESCE(ws.n, 0) DESC, i.created_at DESC`;
+    if (normalizedSort === 'newest' || normalizedSort === 'fresh') {
+      orderBy = 'i.created_at DESC, i.id DESC';
     } else if (normalizedSort === 'most_discussed' || normalizedSort === 'discussed') {
-      orderBy = 's.comments_count DESC, s.avg_score DESC, s.total_ratings DESC';
+      orderBy = 's.comments_count DESC, ranking_score DESC';
     } else if (normalizedSort === 'most_rated') {
-      orderBy = 's.total_ratings DESC, s.avg_score DESC';
+      orderBy = 's.total_ratings DESC, ranking_score DESC';
+    } else if (normalizedSort === 'would_pay' || normalizedSort === 'most_would_pay') {
+      orderBy = 'COALESCE(dm.would_pay_votes, 0) DESC, COALESCE(dm.demand_votes, 0) DESC, i.created_at DESC';
+    } else if (normalizedSort === 'needs_votes') {
+      conditions.push(`COALESCE((SELECT COUNT(*) FROM ratings rr WHERE rr.idea_id = i.id AND rr.held = 0), 0) < ${MIN_RATINGS_TO_RANK}`);
+      orderBy = 'i.created_at DESC, i.id DESC';
     } else if (normalizedSort === 'trending') {
       // Time-decayed popularity score
       orderBy = '((COALESCE(s.total_ratings, 0) * 3.0 + COALESCE(s.avg_score, 0) * 2.0) / (MAX(1, (strftime(\'%s\', \'now\') - strftime(\'%s\', i.created_at)) / 3600.0) + 2.0)) DESC';
     }
+    if (String(req.query.ranked_only) === 'true') {
+      conditions.push(`COALESCE((SELECT COUNT(*) FROM ratings rr WHERE rr.idea_id = i.id AND rr.held = 0), 0) >= ${MIN_RATINGS_TO_RANK}`);
+    }
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Total count query
     const countSql = `
@@ -90,9 +106,14 @@ export async function getIdeas(req, res, next) {
         u.id AS author_id,
         u.name AS author_name,
         u.avatar_url AS author_avatar,
+        i.is_team_seed,
         COALESCE(s.avg_score, 0.0) AS avg_score,
         COALESCE(s.total_ratings, 0) AS total_ratings,
         COALESCE(s.comments_count, 0) AS comments_count,
+        ws.n AS ws_n,
+        ${RANKING_SCORE_SQL} AS ranking_score,
+        dm.demand_votes,
+        dm.would_pay_votes,
         (
           SELECT json_group_array(t.name)
           FROM idea_tags it
@@ -102,6 +123,8 @@ export async function getIdeas(req, res, next) {
       FROM ideas i
       JOIN users u ON i.user_id = u.id
       LEFT JOIN idea_stats_view s ON i.id = s.idea_id
+      LEFT JOIN (${weightedRatingsSql()}) ws ON ws.idea_id = i.id
+      LEFT JOIN (${DEMAND_TOTALS_SQL}) dm ON dm.idea_id = i.id
       ${whereClause}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
@@ -117,15 +140,13 @@ export async function getIdeas(req, res, next) {
       category: r.category,
       created_at: r.created_at,
       updated_at: r.updated_at,
-      author: {
-        id: r.author_id,
-        name: r.author_name,
-        avatar_url: r.author_avatar
-      },
+      is_team_seed: Boolean(Number(r.is_team_seed)),
+      author: displayAuthor(r),
       stats: {
         avg_score: Number(r.avg_score),
         total_ratings: Number(r.total_ratings),
-        comments_count: Number(r.comments_count)
+        comments_count: Number(r.comments_count),
+        ...rankingStats(r)
       },
       tags: r.tags_json ? JSON.parse(r.tags_json).filter(Boolean) : []
     }));
@@ -167,6 +188,11 @@ export async function getIdeaById(req, res, next) {
         u.name AS author_name,
         u.avatar_url AS author_avatar,
         u.bio AS author_bio,
+        i.is_team_seed,
+        ws.n AS ws_n,
+        ${RANKING_SCORE_SQL} AS ranking_score,
+        dm.demand_votes,
+        dm.would_pay_votes,
         COALESCE(s.avg_score, 0.0) AS avg_score,
         COALESCE(s.total_ratings, 0) AS total_ratings,
         COALESCE(s.score_5_count, 0) AS score_5_count,
@@ -184,6 +210,8 @@ export async function getIdeaById(req, res, next) {
       FROM ideas i
       JOIN users u ON i.user_id = u.id
       LEFT JOIN idea_stats_view s ON i.id = s.idea_id
+      LEFT JOIN (${weightedRatingsSql()}) ws ON ws.idea_id = i.id
+      LEFT JOIN (${DEMAND_TOTALS_SQL}) dm ON dm.idea_id = i.id
       WHERE i.id = ?
     `;
 
@@ -217,12 +245,8 @@ export async function getIdeaById(req, res, next) {
       category: row.category,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      author: {
-        id: row.author_id,
-        name: row.author_name,
-        avatar_url: row.author_avatar,
-        bio: row.author_bio
-      },
+      is_team_seed: Boolean(Number(row.is_team_seed)),
+      author: displayAuthor(row, { withBio: true }),
       stats: {
         avg_score: Number(row.avg_score),
         total_ratings: Number(row.total_ratings),
@@ -233,7 +257,8 @@ export async function getIdeaById(req, res, next) {
           2: Number(row.score_2_count),
           1: Number(row.score_1_count)
         },
-        comments_count: Number(row.comments_count)
+        comments_count: Number(row.comments_count),
+        ...rankingStats(row)
       },
       tags: row.tags_json ? JSON.parse(row.tags_json).filter(Boolean) : [],
       user_rating: userRating
@@ -380,6 +405,22 @@ export async function deleteIdea(req, res, next) {
       success: true,
       message: 'Idea deleted successfully.'
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Admins label seed content honestly as "Posted by BusinessListe Team".
+export async function setTeamSeed(req, res, next) {
+  try {
+    const ideaId = Number(req.params.id);
+    const idea = await db.prepare('SELECT id FROM ideas WHERE id = ?').get(ideaId);
+    if (!idea) {
+      return res.status(404).json({ success: false, error: { message: 'Idea not found.' } });
+    }
+    const isTeamSeed = Boolean(req.body.is_team_seed);
+    await db.prepare('UPDATE ideas SET is_team_seed = ? WHERE id = ?').run(isTeamSeed ? 1 : 0, ideaId);
+    res.json({ success: true, data: { id: ideaId, is_team_seed: isTeamSeed } });
   } catch (err) {
     next(err);
   }

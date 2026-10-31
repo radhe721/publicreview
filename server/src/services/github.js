@@ -83,6 +83,20 @@ export async function fetchGithubRepo({ owner, name }) {
     language: repo.language || null,
     stars: Number(repo.stargazers_count || 0),
     forks: Number(repo.forks_count || 0),
-    topics: Array.isArray(repo.topics) ? repo.topics.slice(0, 10) : []
+    topics: Array.isArray(repo.topics) ? repo.topics.slice(0, 10) : [],
+    license: repo.license?.spdx_id || null,
+    pushed_at: repo.pushed_at || null
   };
+}
+
+// Plain-English meaning of common licenses for someone thinking of building a business on the code.
+export function licenseNote(spdx) {
+  const id = String(spdx || '').toUpperCase();
+  if (!id || id === 'NOASSERTION') return 'Custom or unclear license: read it carefully before building a business on it.';
+  if (['MIT', 'ISC', '0BSD', 'UNLICENSE'].includes(id) || id.startsWith('BSD')) return 'Permissive: almost anything allowed, including commercial use; keep the copyright notice.';
+  if (id === 'APACHE-2.0') return 'Permissive: commercial use allowed; keep the notice and state your changes.';
+  if (id.startsWith('AGPL')) return 'AGPL: if you run it as a service, you must share your changes under the same license.';
+  if (id.startsWith('GPL') || id.startsWith('LGPL')) return 'GPL: if you distribute it, you must share your changes under the same license.';
+  if (id === 'MPL-2.0') return 'MPL: changes to its files must stay open; your own files can stay private.';
+  return 'Read the license before building a business on it.';
 }

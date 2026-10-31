@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Mail } from 'lucide-react';
 import { z } from 'zod';
 
 // Same rule the server applies, so anything accepted here isn't rejected after submitting.
@@ -12,7 +12,8 @@ const emailSchema = z.string().trim().email().max(100);
 // Shown only once the list is big enough to be reassuring rather than empty.
 const SOCIAL_PROOF_MIN = 10;
 
-export function WaitlistCard({ source = 'landing' }) {
+// Weekly email: "Top validated ideas this week". Uses the same signup list as the old waitlist.
+export function WaitlistCard({ source = 'weekly_email' }) {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -61,9 +62,9 @@ export function WaitlistCard({ source = 'landing' }) {
       <section aria-live="polite" className="p-6 rounded-[12px] border border-border bg-surface flex items-start gap-3">
         <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
         <div>
-          <h2 className="text-base font-bold text-ink">You're on the list!</h2>
+          <h2 className="text-base font-bold text-ink">You're subscribed!</h2>
           <p className="text-sm text-ink-muted mt-0.5">
-            We'll email <strong className="text-ink">{email.trim()}</strong> when new features launch. Thanks for the early support.
+            We'll send the top validated ideas to <strong className="text-ink">{email.trim()}</strong> once a week.
           </p>
         </div>
       </section>
@@ -74,15 +75,15 @@ export function WaitlistCard({ source = 'landing' }) {
     <section aria-labelledby="waitlist-heading" className="p-5 sm:p-6 rounded-[12px] border border-border bg-surface space-y-4">
       <div className="space-y-1">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-accent-strong">
-          <Sparkles className="w-3.5 h-3.5" /> Early access
+          <Mail className="w-3.5 h-3.5" /> Weekly email
         </span>
         <h2 id="waitlist-heading" className="text-lg sm:text-xl font-bold tracking-tight text-ink">
-          Join the BusinessListe waitlist
+          Get the top validated ideas every week
         </h2>
         <p className="text-sm text-ink-muted">
-          Be first to try new validation tools and get launch updates.
+          The ideas real people said they would pay for, with the numbers. One email a week.
           {total >= SOCIAL_PROOF_MIN && (
-            <> <strong className="text-ink tabular-nums">{total.toLocaleString()}</strong> people have already joined.</>
+            <> <strong className="text-ink tabular-nums">{total.toLocaleString()}</strong> people already get it.</>
           )}
         </p>
       </div>
@@ -120,20 +121,6 @@ export function WaitlistCard({ source = 'landing' }) {
             />
           </div>
         </div>
-        <div className="space-y-1">
-          <label htmlFor="waitlist-use" className="text-xs font-bold uppercase tracking-wider text-ink block">
-            What would you use it for? <span className="font-normal normal-case text-ink-muted">(optional)</span>
-          </label>
-          <Input
-            id="waitlist-use"
-            value={useCase}
-            onChange={(e) => setUseCase(e.target.value)}
-            placeholder="e.g. Testing demand for my SaaS idea before building"
-            maxLength={300}
-            className="h-11"
-          />
-        </div>
-
         {/* Honeypot: invisible to people, tempting to bots. Its label and id deliberately avoid words
             like "website" or "url" that browser and password-manager autofill would fill in for real people. */}
         <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
@@ -145,7 +132,7 @@ export function WaitlistCard({ source = 'landing' }) {
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <Button type="submit" isLoading={isSubmitting} className="h-11 px-6 rounded-[8px]">
-            Join the waitlist
+            Subscribe
           </Button>
           <span className="text-xs text-ink-muted">No spam. Unsubscribe anytime.</span>
         </div>

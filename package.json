@@ -13,7 +13,8 @@
     "seed": "npm run seed --prefix server",
     "seed:local": "TURSO_DATABASE_URL= TURSO_AUTH_TOKEN= NODE_ENV=development CLIENT_URL=http://localhost:5173 DATABASE_PATH=./src/db/local-test.db npm run seed",
     "test": "npm test --prefix server",
-    "install:all": "npm install && npm install --prefix server && npm install --prefix client"
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "seed:repos": "npm run seed:repos --prefix server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

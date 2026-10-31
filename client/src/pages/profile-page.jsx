@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ROLE_LABELS } from '@/components/demand-signal-panel';
+import { toast } from 'sonner';
 import api from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
 import { IdeaRow } from '@/components/idea-row';
@@ -11,9 +13,72 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils';
 import { ExternalLink, FileText, Star, MessageSquare } from 'lucide-react';
 
+const ROLE_OPTIONS = ['founder', 'freelancer', 'developer', 'agency_owner', 'marketer', 'designer', 'operator', 'student', 'other'];
+
+// Singular label for a role tag ("Freelancers" -> "Freelancer").
+function roleName(tag) {
+  const label = ROLE_LABELS[tag] || tag;
+  return label.endsWith('s') && tag !== 'other' ? label.slice(0, -1) : label;
+}
+
+function ProfileEditor({ user, onSaved }) {
+  const [roleTag, setRoleTag] = useState(user.role_tag || '');
+  const [bio, setBio] = useState(user.bio || '');
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.patch('/users/me', { role_tag: roleTag || null, bio: bio.trim() || null });
+      toast.success('Profile saved.');
+      onSaved();
+    } catch (err) {
+      toast.error(err.message || 'Could not save your profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={save} className="pt-6 border-t border-border space-y-3 text-left">
+      <p className="text-xs text-ink-muted">
+        Your role shows founders who voted (for example "3 of 5 freelancers would pay"). Votes from accounts with a role or bio count fully in rankings.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <label htmlFor="profile-role" className="text-xs font-bold uppercase tracking-wider text-ink block">Your role</label>
+          <select
+            id="profile-role"
+            value={roleTag}
+            onChange={(e) => setRoleTag(e.target.value)}
+            className="w-full h-10 px-3 rounded-[8px] border border-border bg-bg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-focus-ring"
+          >
+            <option value="">Choose a role</option>
+            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{roleName(r)}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <label htmlFor="profile-bio" className="text-xs font-bold uppercase tracking-wider text-ink block">Bio</label>
+          <input
+            id="profile-bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            maxLength={250}
+            placeholder="What you do, in one line"
+            className="w-full h-10 px-3 rounded-[8px] border border-border bg-bg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-focus-ring"
+          />
+        </div>
+      </div>
+      <Button type="submit" size="sm" isLoading={saving} className="rounded-[8px]">Save profile</Button>
+    </form>
+  );
+}
+
 export function ProfilePage() {
   const { id } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('ideas');
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
@@ -101,10 +166,21 @@ export function ProfilePage() {
               </p>
 
               <p className="text-xs text-ink-faint pt-1">
+                {user.role_tag && <span className="font-semibold text-ink-muted">{roleName(user.role_tag)} · </span>}
                 Member since {formatDate(user.created_at)}
               </p>
             </div>
           </div>
+
+          {isOwnProfile && (
+            <ProfileEditor
+              user={user}
+              onSaved={() => {
+                queryClient.invalidateQueries(['user-profile', id]);
+                refreshUser?.();
+              }}
+            />
+          )}
 
           {/* Quiet Stat Row: Ideas posted, average score received, ratings given */}
           <div className="pt-6 border-t border-border grid grid-cols-3 gap-4 text-center sm:text-left">

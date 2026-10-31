@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRelativeTime, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { HeldVotesPanel } from '@/components/held-votes-panel';
 import { Shield, ExternalLink, CheckCircle } from 'lucide-react';
 
 export function AdminModerationPage() {
@@ -230,6 +231,7 @@ export function AdminModerationPage() {
           isLoading={isDeleting}
           onConfirm={handleDeleteIdea}
         />
+        <HeldVotesPanel />
       </main>
     </div>
   );

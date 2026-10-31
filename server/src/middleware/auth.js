@@ -36,7 +36,7 @@ export function clearAuthCookie(res) {
   res.clearCookie(COOKIE_NAME, baseCookieOptions);
 }
 
-const USER_COLUMNS = 'id, name, email, role, avatar_url, bio, token_version';
+const USER_COLUMNS = 'id, name, email, role, avatar_url, bio, role_tag, created_at, token_version';
 
 // Returns the user for a valid token, or null. Tokens issued before the user's
 // token_version was bumped (logout-everywhere, password invalidation) are rejected.

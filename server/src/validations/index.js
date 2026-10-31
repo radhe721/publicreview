@@ -28,7 +28,7 @@ export const oauthProviderSchema = z.object({
 
 export const demandSignalSchema = z.object({
   intent: z.enum(['pass', 'maybe', 'would_pay']),
-  price_tier: z.enum(['under_10', '10_to_30', '30_to_100', 'over_100']).optional().nullable(),
+  price_tier: z.enum(['0_5', '5_15', '15_30', '30_100', '100_plus']).optional().nullable(),
   join_waitlist: z.boolean().optional().default(false)
 }).transform((data) => ({
   ...data,
@@ -78,7 +78,8 @@ export const paginationQuerySchema = z.object({
   sort: z.string().trim().optional().default('top'),
   time_window: z.string().trim().optional(),
   timeframe: z.string().trim().optional(),
-  tag: z.string().trim().optional()
+  tag: z.string().trim().optional(),
+  ranked_only: z.enum(['true', 'false']).optional()
 });
 
 export const waitlistSchema = z.object({
@@ -100,5 +101,30 @@ export const repoListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(50).optional().default(20),
   search: z.string().trim().max(100).optional(),
-  sort: z.enum(['top', 'newest']).optional().default('top')
+  sort: z.enum(['top', 'newest']).optional().default('top'),
+  category: z.string().trim().max(40).optional(),
+  license: z.string().trim().max(40).optional()
+});
+
+export const ROLE_TAGS = ['founder', 'freelancer', 'developer', 'agency_owner', 'marketer', 'designer', 'operator', 'student', 'other'];
+
+export const updateProfileSchema = z.object({
+  bio: z.string().trim().max(250, 'Bio cannot exceed 250 characters').optional().nullable(),
+  role_tag: z.enum(ROLE_TAGS).optional().nullable()
+});
+
+export const feedbackSchema = z.object({
+  problem_real: z.number().int().min(1).max(5),
+  buyer_would_pay: z.number().int().min(1).max(5),
+  price_fit: z.enum(['too_low', 'right', 'too_high']).optional().nullable(),
+  competitor: z.string().trim().max(300, 'Competitor cannot exceed 300 characters').optional().nullable(),
+  would_make_pay: z.string().trim().max(1000, 'Answer cannot exceed 1000 characters').optional().nullable()
+});
+
+export const teamSeedSchema = z.object({
+  is_team_seed: z.boolean()
+});
+
+export const heldVoteActionSchema = z.object({
+  action: z.enum(['release', 'delete'])
 });

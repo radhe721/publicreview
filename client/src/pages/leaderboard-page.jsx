@@ -46,7 +46,8 @@ export function LeaderboardPage() {
                 Leaderboard
               </h1>
               <p className="text-sm text-ink-muted mt-1">
-                The community's highest-rated ideas and breakout concepts.
+                Ranked by weighted score. Ideas need at least 5 ratings in the period to appear.{' '}
+                <Link to="/about#ranking" className="text-accent-strong hover:underline">How ranking works</Link>
               </p>
             </div>
 
@@ -84,14 +85,14 @@ export function LeaderboardPage() {
                 <Trophy className="w-5 h-5" />
               </div>
               <h2 className="font-bold text-base text-ink">
-                No entries ranked in this timeframe yet
+                No idea has 5 ratings in this period yet
               </h2>
               <p className="text-sm text-ink-muted mt-1 mb-4 leading-relaxed max-w-sm mx-auto">
-                Cast the first ballot on recent submissions in the community ideas list.
+                We only rank ideas once enough real people have rated them. Help an idea get there.
               </p>
-              <Link to="/feed">
+              <Link to="/feed?sort=needs_votes">
                 <Button size="sm" variant="secondary" className="text-xs rounded-[8px] px-4">
-                  Browse community ideas
+                  Rate ideas that need votes
                 </Button>
               </Link>
             </div>

@@ -4,7 +4,8 @@ import {
   shareRepo,
   upvoteRepo,
   removeRepoUpvote,
-  deleteRepo
+  deleteRepo,
+  getRepoFacets
 } from '../controllers/repo.controller.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -13,6 +14,7 @@ import { shareRepoSchema, repoListQuerySchema } from '../validations/index.js';
 
 const router = Router();
 
+router.get('/facets', getRepoFacets);
 router.get('/', optionalAuth, validate(repoListQuerySchema, 'query'), getRepos);
 router.post('/', requireAuth, repoShareLimiter, validate(shareRepoSchema), shareRepo);
 router.delete('/:id', requireAuth, deleteRepo);

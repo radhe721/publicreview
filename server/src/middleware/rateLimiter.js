@@ -80,3 +80,28 @@ export const repoShareLimiter = rateLimit({
     error: { message: 'You have shared a lot of repos this hour. Please try again later.' }
   }
 });
+
+const isTest = process.env.NODE_ENV === 'test';
+
+// Voting (ratings, demand, feedback): generous for real people, a wall for scripts.
+export const voteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isTest ? 10000 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'You are voting very fast. Please take a short break and try again.' }
+  }
+});
+
+export const ideaPostLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: isTest ? 10000 : 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { message: 'You have posted a lot of ideas this hour. Please try again later.' }
+  }
+});

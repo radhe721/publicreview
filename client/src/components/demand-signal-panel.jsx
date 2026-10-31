@@ -14,12 +14,37 @@ const INTENTS = [
   { id: 'would_pay', label: "I'd pay for it", hint: 'Take my money at launch', Icon: Wallet, bar: 'bg-success' },
 ];
 
-const PRICE_TIERS = [
-  { id: 'under_10', label: 'Under $10' },
-  { id: '10_to_30', label: '$10–30' },
-  { id: '30_to_100', label: '$30–100' },
-  { id: 'over_100', label: '$100+' },
+export const PRICE_TIERS = [
+  { id: '0_5', label: '$0–5' },
+  { id: '5_15', label: '$5–15' },
+  { id: '15_30', label: '$15–30' },
+  { id: '30_100', label: '$30–100' },
+  { id: '100_plus', label: '$100+' },
 ];
+
+export const ROLE_LABELS = {
+  founder: 'Founders',
+  freelancer: 'Freelancers',
+  developer: 'Developers',
+  agency_owner: 'Agency owners',
+  marketer: 'Marketers',
+  designer: 'Designers',
+  operator: 'Operators',
+  student: 'Students',
+  other: 'Other',
+  unspecified: 'No role set',
+};
+
+// "62% would pay · median $15–30/month · 23 votes · 9 on waitlist"
+export function demandHeadline(demand) {
+  const total = demand?.total || 0;
+  if (total === 0) return 'No votes yet. Be the first to say if you would pay.';
+  const parts = [`${demand.pay_rate}% would pay`];
+  if (demand.median_price) parts.push(`median ${demand.median_price.label}/month`);
+  parts.push(`${total} ${total === 1 ? 'vote' : 'votes'}`);
+  parts.push(`${demand.waitlist_count || 0} on waitlist`);
+  return parts.join(' · ');
+}
 
 function demandVerdict(score, total) {
   if (total < 3) return 'Early signal: needs more votes';
@@ -68,6 +93,8 @@ function DemandSummary({ demand }) {
           {total} {total === 1 ? 'vote' : 'votes'}
         </span>
       </div>
+
+      <p className="text-sm font-semibold text-ink tabular-nums" data-testid="demand-headline">{demandHeadline(demand)}</p>
 
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -132,6 +159,20 @@ function DemandSummary({ demand }) {
         )}
       </div>
 
+      {demand?.by_role?.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Who voted</h4>
+          <ul className="space-y-1 text-xs">
+            {demand.by_role.map((r) => (
+              <li key={r.role} className="flex items-center justify-between gap-3 tabular-nums">
+                <span className="text-ink">{ROLE_LABELS[r.role] || r.role}</span>
+                <span className="text-ink-muted">{r.would_pay} of {r.total} would pay</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 pt-3 border-t border-border text-xs text-ink-muted">
         <Users className="w-3.5 h-3.5" />
         <span className="tabular-nums">
@@ -163,7 +204,7 @@ function SignalForm({ ideaId, mySignal, onSaved }) {
         price_tier: intent === 'would_pay' ? priceTier : null,
         join_waitlist: intent !== 'pass' && joinWaitlist,
       });
-      toast.success(mySignal ? 'Signal updated.' : 'Thanks! Your signal helps the creator validate.');
+      toast.success(res.message || (mySignal ? 'Vote updated.' : 'Thanks! Your vote helps the founder validate.'));
       onSaved(res.data);
     } catch (err) {
       toast.error(err.message || 'Could not save your signal.');
@@ -188,8 +229,11 @@ function SignalForm({ ideaId, mySignal, onSaved }) {
   return (
     <div className="p-5 sm:p-6 rounded-[12px] border border-border bg-surface text-ink space-y-4">
       <div className="space-y-1">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Would you use this?</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Would you pay for this?</h3>
         <p className="text-xs text-ink-muted">Honest answers matter more than nice ones. Only totals are public.</p>
+        {mySignal?.held && (
+          <p className="text-xs text-ink-muted">Your vote is waiting for a quick review before it counts.</p>
+        )}
       </div>
 
       <div role="radiogroup" aria-label="Your demand signal" className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -218,7 +262,7 @@ function SignalForm({ ideaId, mySignal, onSaved }) {
       {intent === 'would_pay' && (
         <div className="space-y-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted block">
-            How much per month? <span className="font-normal normal-case">(optional)</span>
+            How much per month?
           </span>
           <div className="flex flex-wrap gap-2">
             {PRICE_TIERS.map((tier) => (
@@ -256,7 +300,7 @@ function SignalForm({ ideaId, mySignal, onSaved }) {
 
       <div className="flex items-center gap-2 pt-1">
         <Button onClick={save} disabled={!intent} isLoading={isSaving} className="flex-1 h-10 rounded-[8px]">
-          {mySignal ? 'Update signal' : 'Submit signal'}
+          {mySignal ? 'Update vote' : 'Submit vote'}
         </Button>
         {mySignal && (
           <Button variant="ghost" onClick={remove} disabled={isSaving} className="h-10 rounded-[8px] text-xs">
@@ -347,8 +391,8 @@ export function DemandSignalPanel({ ideaId, ideaTitle, isAuthor, isAuthenticated
           <SignalForm ideaId={ideaId} mySignal={mySignal} onSaved={handleSaved} />
         ) : (
           <div className="p-6 rounded-[12px] border border-dashed border-border bg-surface text-center space-y-3">
-            <p className="text-sm font-semibold text-ink">Would you use or pay for this?</p>
-            <p className="text-xs text-ink-muted">Sign in to cast a demand signal and join the launch waitlist.</p>
+            <p className="text-sm font-semibold text-ink">Would you pay for this?</p>
+            <p className="text-xs text-ink-muted">Sign in with Google or GitHub to vote and join the launch waitlist. It takes a few seconds.</p>
             <Link to={`/login?redirect=${encodeURIComponent(`/ideas/${ideaId}`)}`}>
               <Button size="sm" className="rounded-[8px] mt-1">Sign in to vote</Button>
             </Link>

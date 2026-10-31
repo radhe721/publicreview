@@ -20,6 +20,8 @@ const CATEGORIES = ['All', 'Tech', 'Business', 'Design', 'Social', 'Education', 
 const SORT_OPTIONS = [
   { value: 'top', label: 'Top' },
   { value: 'newest', label: 'Newest' },
+  { value: 'would_pay', label: 'Most would-pay' },
+  { value: 'needs_votes', label: 'Needs votes' },
   { value: 'most_discussed', label: 'Most discussed' },
 ];
 

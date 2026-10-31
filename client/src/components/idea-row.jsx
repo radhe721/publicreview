@@ -124,6 +124,10 @@ export function IdeaRow({
   };
 
   const commentsCount = Number(idea.stats?.comments_count || idea.comments_count || 0);
+  // Under 5 ratings an average means little, so show progress toward ranking instead of a score.
+  const needsVotes = totalRatings < 5;
+  const wouldPayPct = Number(idea.stats?.would_pay_pct || 0);
+  const demandVotes = Number(idea.stats?.demand_votes || 0);
   const isTop3 = showRank && rank && rank <= 3;
 
   return (
@@ -191,11 +195,27 @@ export function IdeaRow({
                 </span>
               </>
             )}
+            {needsVotes && (
+              <>
+                <span className="text-ink-faint select-none">•</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-accent-soft text-accent-strong font-semibold whitespace-nowrap">
+                  New, needs {5 - totalRatings} more {5 - totalRatings === 1 ? 'vote' : 'votes'}
+                </span>
+              </>
+            )}
+            {demandVotes > 0 && (
+              <>
+                <span className="text-ink-faint select-none">•</span>
+                <span className="text-success font-semibold whitespace-nowrap tabular-nums">
+                  {wouldPayPct}% would pay
+                </span>
+              </>
+            )}
             {idea.author?.name && (
               <>
                 <span className="text-ink-faint select-none hidden sm:inline">•</span>
                 <span className="text-ink-faint truncate hidden sm:inline">
-                  by {idea.author.name}
+                  {idea.author.is_team ? 'Posted by BusinessListe Team' : `by ${idea.author.name}`}
                 </span>
               </>
             )}
@@ -238,7 +258,7 @@ export function IdeaRow({
               ? 'bg-accent-soft border-accent-strong text-accent-strong'
               : 'bg-surface border-border-strong hover:border-accent-strong text-ink hover:text-accent-strong'
           )}
-          aria-label={`Average rating ${currentScore.toFixed(1)} out of 5. Click to rate.`}
+          aria-label={needsVotes ? `${totalRatings} of 5 ratings needed to rank. Click to rate.` : `Average rating ${currentScore.toFixed(1)} out of 5. Click to rate.`}
           aria-expanded={isRatingOpen}
         >
           <Sparkles
@@ -255,7 +275,7 @@ export function IdeaRow({
               animatingScore && 'scale-110 text-accent-strong'
             )}
           >
-            {earlyFairnessActive ? '—.-' : currentScore > 0 ? currentScore.toFixed(1) : '—'}
+            {earlyFairnessActive ? '—.-' : needsVotes ? `${totalRatings}/5` : currentScore.toFixed(1)}
           </span>
         </button>
 

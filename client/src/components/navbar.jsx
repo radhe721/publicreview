@@ -108,24 +108,24 @@ export function Navbar({ onOpenCommandPalette }) {
       ],
     },
     repos: {
-      label: 'Repos',
+      label: 'Open Source',
       path: '/repos',
       items: [
         {
-          title: 'Top Repos',
-          desc: 'Open-source projects the community upvoted most',
+          title: 'Top projects',
+          desc: 'Open-source SaaS ranked by community votes and GitHub stars',
           path: '/repos?sort=top',
           icon: Star,
         },
         {
-          title: 'Newest Repos',
-          desc: 'GitHub projects shared most recently',
+          title: 'Newest',
+          desc: 'Open-source SaaS shared most recently',
           path: '/repos?sort=newest',
           icon: Calendar,
         },
         {
-          title: 'Share a Repo',
-          desc: 'Found something great on GitHub? Post the link',
+          title: 'Share a project',
+          desc: 'Found an open-source SaaS on GitHub? Post the link',
           path: '/repos',
           icon: Github,
         },
@@ -174,7 +174,7 @@ export function Navbar({ onOpenCommandPalette }) {
         {
           title: 'Reviewer Guidelines',
           desc: 'How to provide honest, constructive, and actionable ratings',
-          path: '/feed#guidelines',
+          path: '/about#guidelines',
           icon: Info,
         },
         {
@@ -190,21 +190,21 @@ export function Navbar({ onOpenCommandPalette }) {
       path: '/about',
       items: [
         {
-          title: 'The BusinessListe Manifesto',
-          desc: 'Why we validate and stress-test ideas before building',
-          path: '/feed#manifesto',
+          title: 'Why BusinessListe',
+          desc: 'Find out if real people would pay before you build',
+          path: '/about#why',
           icon: Info,
         },
         {
           title: 'Scoring Methodology',
-          desc: 'How the 1-5 rating formula and Bayesian scoring works',
-          path: '/feed#scoring',
+          desc: 'Minimum 5 ratings, weighted Bayesian score',
+          path: '/about#ranking',
           icon: Sparkles,
         },
         {
-          title: 'Early-Hours Fairness',
-          desc: 'Preventing herd bias during the first hours of voting',
-          path: '/feed#fairness',
+          title: 'Keeping votes honest',
+          desc: 'One vote per account, burst holds, no self-voting',
+          path: '/about#fairness',
           icon: Compass,
         },
       ],
@@ -253,7 +253,7 @@ export function Navbar({ onOpenCommandPalette }) {
                       )
                     }
                   >
-                    <span>{group.label}</span>
+                    <span className="whitespace-nowrap">{group.label}</span>
                     <ChevronDown
                       className={cn(
                         'w-3.5 h-3.5 transition-transform duration-150',
@@ -488,7 +488,7 @@ export function Navbar({ onOpenCommandPalette }) {
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-hover rounded-[8px] min-h-[44px] flex items-center"
             >
-              Repos
+              Open-Source SaaS
             </NavLink>
             <NavLink
               to="/leaderboard"

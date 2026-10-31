@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { isVoteBurst } from '../services/ranking.js';
 
 export async function getIdeaRatings(req, res, next) {
   try {
@@ -16,7 +17,7 @@ export async function getIdeaRatings(req, res, next) {
         u.avatar_url AS user_avatar
       FROM ratings r
       JOIN users u ON r.user_id = u.id
-      WHERE r.idea_id = ?
+      WHERE r.idea_id = ? AND r.held = 0
       ORDER BY r.created_at DESC
     `;
 
@@ -87,16 +88,20 @@ export async function submitOrUpdateRating(req, res, next) {
     }
 
     // Upsert rating: One rating per user per idea
+    const existing = await db.prepare('SELECT held FROM ratings WHERE idea_id = ? AND user_id = ?').get(ideaId, userId);
+    // A first rating in a burst of new accounts is held for admin review and not counted until released.
+    const held = existing ? Number(existing.held) : ((await isVoteBurst('ratings', ideaId, userId)) ? 1 : 0);
+
     const upsertSql = `
-      INSERT INTO ratings (user_id, idea_id, score, review_text, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO ratings (user_id, idea_id, score, review_text, held, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(user_id, idea_id) DO UPDATE SET
         score = excluded.score,
         review_text = excluded.review_text,
         updated_at = CURRENT_TIMESTAMP
     `;
 
-    await db.prepare(upsertSql).run(userId, ideaId, score, review_text || null);
+    await db.prepare(upsertSql).run(userId, ideaId, score, review_text || null, held);
 
     // Fetch updated stats from SQL view
     const updatedStats = await db.prepare(`
@@ -113,14 +118,14 @@ export async function submitOrUpdateRating(req, res, next) {
     `).get(ideaId);
 
     const userRating = await db.prepare(`
-      SELECT id, score, review_text, created_at, updated_at
+      SELECT id, score, review_text, held, created_at, updated_at
       FROM ratings
       WHERE idea_id = ? AND user_id = ?
     `).get(ideaId, userId);
 
     res.json({
       success: true,
-      message: 'Rating saved successfully.',
+      message: held ? 'Rating saved. It will count once it is reviewed.' : 'Rating saved successfully.',
       data: {
         rating: userRating,
         stats: {

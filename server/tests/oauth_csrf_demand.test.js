@@ -285,13 +285,13 @@ describe('Demand validation signals & waitlist', () => {
 
   test('Signals upsert, compute score, and sanitize price/waitlist by intent', async () => {
     let res = await request(app).put(`/api/v1/ideas/${ideaId}/demand`).set('Cookie', voter.cookie)
-      .send({ intent: 'would_pay', price_tier: '10_to_30', join_waitlist: true });
+      .send({ intent: 'would_pay', price_tier: '15_30', join_waitlist: true });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.data.demand.demand_score, 100);
     assert.strictEqual(res.body.data.my_signal.join_waitlist, true);
 
     res = await request(app).put(`/api/v1/ideas/${ideaId}/demand`).set('Cookie', otherVoter.cookie)
-      .send({ intent: 'pass', price_tier: 'over_100', join_waitlist: true });
+      .send({ intent: 'pass', price_tier: '100_plus', join_waitlist: true });
     assert.strictEqual(res.body.data.my_signal.price_tier, null);
     assert.strictEqual(res.body.data.my_signal.join_waitlist, false);
 
@@ -299,8 +299,10 @@ describe('Demand validation signals & waitlist', () => {
     assert.strictEqual(demand.total, 2);
     assert.strictEqual(demand.pay_rate, 50);
     assert.strictEqual(demand.demand_score, 50);
-    assert.strictEqual(demand.price_tiers['10_to_30'], 1);
-    assert.strictEqual(demand.price_tiers.over_100, 0);
+    assert.strictEqual(demand.price_tiers['15_30'], 1);
+    assert.strictEqual(demand.price_tiers['100_plus'], 0);
+    assert.deepStrictEqual(demand.median_price, { tier: '15_30', label: '$15–30' });
+    assert.ok(Array.isArray(demand.by_role));
     assert.strictEqual(demand.waitlist_count, 1);
 
     // Changing a vote updates rather than duplicates

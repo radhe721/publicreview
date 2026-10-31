@@ -25,37 +25,31 @@ const CATEGORIES_DATA = [
     name: 'Tech',
     desc: 'Developer tools, offline architectures, and AI primitives',
     icon: Code,
-    count: '240+ ideas',
   },
   {
     name: 'Design',
     desc: 'Accessible systems, token palettes, and typography playgrounds',
     icon: Palette,
-    count: '180+ ideas',
   },
   {
     name: 'Social',
     desc: 'Civic tech, neighborhood swaps, and mutual aid networks',
     icon: Users,
-    count: '150+ ideas',
   },
   {
     name: 'Education',
     desc: 'Micro-curricula, tactile STEM proofs, and audio learning',
     icon: GraduationCap,
-    count: '120+ ideas',
   },
   {
     name: 'Business',
     desc: 'Micro-SaaS, billing shields, and automated workflows',
     icon: Briefcase,
-    count: '210+ ideas',
   },
   {
     name: 'Other',
     desc: 'Hardware hacks, ergonomic layouts, and experimental tools',
     icon: Layers,
-    count: '90+ ideas',
   },
 ];
 
@@ -63,42 +57,35 @@ export function LandingPage() {
   const navigate = useNavigate();
   const [focusedRowIndex, setFocusedRowIndex] = useState(-1);
 
-  // 1. Fetch Today's Top Ideas (up to 10)
-  const { data: todayData, isLoading: isTodayLoading } = useQuery({
-    queryKey: ['home-today-ideas'],
-    queryFn: () => api.get('/ideas?limit=10&sort=top'),
+  // Fresh ideas first while the site is small, so every new idea gets seen and voted on.
+  const { data: freshData, isLoading: isFreshLoading } = useQuery({
+    queryKey: ['home-fresh-ideas'],
+    queryFn: () => api.get('/ideas?limit=10&sort=newest'),
   });
 
-  // 2. Fetch Yesterday's Top Ideas (5)
-  const { data: yesterdayData, isLoading: isYesterdayLoading } = useQuery({
-    queryKey: ['home-yesterday-ideas'],
-    queryFn: () => api.get('/ideas?limit=5&sort=trending'),
-  });
-
-  // 3. Fetch Last Week's Top Ideas (5)
+  // Top this week: only ideas with at least 5 ratings this week.
   const { data: weekData, isLoading: isWeekLoading } = useQuery({
-    queryKey: ['home-week-ideas'],
-    queryFn: () => api.get('/ideas?limit=5&sort=top&time_window=week'),
+    queryKey: ['home-week-top'],
+    queryFn: () => api.get('/leaderboard?timeframe=week&limit=5'),
   });
 
-  // 4. Fetch This Month's Top Ideas (5)
+  // Top this month, same rule.
   const { data: monthData, isLoading: isMonthLoading } = useQuery({
-    queryKey: ['home-month-ideas'],
-    queryFn: () => api.get('/ideas?limit=5&sort=top&time_window=month'),
+    queryKey: ['home-month-top'],
+    queryFn: () => api.get('/leaderboard?timeframe=month&limit=5'),
   });
 
-  const todayIdeas = todayData?.data?.ideas || [];
-  const yesterdayIdeas = yesterdayData?.data?.ideas || [];
-  const weekIdeas = weekData?.data?.ideas || [];
-  const monthIdeas = monthData?.data?.ideas || [];
+  const todayIdeas = freshData?.data?.ideas || [];
+  const weekIdeas = weekData?.data?.leaderboard || [];
+  const monthIdeas = monthData?.data?.leaderboard || [];
 
   // Trending discussions derived from highest comment count
-  const trendingDiscussions = [...todayIdeas, ...yesterdayIdeas]
+  const trendingDiscussions = [...todayIdeas, ...weekIdeas]
     .filter((idea) => Number(idea.stats?.comments_count || 0) > 0)
     .slice(0, 4);
 
   // Fallback if low comments in current ideas
-  const discussionsList = trendingDiscussions.length >= 2 ? trendingDiscussions : todayIdeas.slice(0, 4);
+  const discussionsList = trendingDiscussions;
 
   // Keyboard navigation for ranked list
   useEffect(() => {
@@ -127,11 +114,35 @@ export function LandingPage() {
       {/* Centered Main Content Column: Max 860px */}
       <main className="max-w-[860px] mx-auto px-4 sm:px-6 space-y-12">
         {/* Page Header */}
-        <div className="space-y-1.5 border-b border-border pb-6">
+        <div className="space-y-3 border-b border-border pb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+                Would people pay for it?
+              </h1>
+              <p className="text-sm sm:text-base text-ink-muted">
+                Post your idea. Find out in 7 days if real people would pay for it.
+              </p>
+            </div>
+            <Link to="/submit" className="shrink-0">
+              <Button className="h-10 rounded-[8px] gap-1.5">
+                <Sparkles className="w-4 h-4" /> Post an idea
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Section 1: Fresh ideas (newest first) */}
+        <section aria-labelledby="fresh-heading" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-              Top Ideas Today
-            </h1>
+            <div>
+              <h2 id="fresh-heading" className="text-base font-bold text-ink">
+                Fresh ideas
+              </h2>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Newest first. Each one needs 5 ratings to enter the Top lists.
+              </p>
+            </div>
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-ink-faint font-medium">
               <kbd className="px-1.5 py-0.5 font-mono text-[11px] bg-surface border border-border rounded-[4px]">
                 ↑↓
@@ -143,35 +154,15 @@ export function LandingPage() {
               to rate
             </span>
           </div>
-          <p className="text-sm text-ink-muted">
-            The community's highest-ranked product proposals, scored 1–5 in real time.
-          </p>
-        </div>
-
-        <WaitlistCard source="landing" />
-
-        {/* Section 1: Top Ideas Today (Ranked list up to 10) */}
-        <section aria-labelledby="today-heading" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 id="today-heading" className="text-sm font-bold uppercase tracking-wider text-ink-muted">
-              Today's Ranked List
-            </h2>
-            <Link
-              to="/feed?sort=top"
-              className="text-xs font-semibold text-accent-strong hover:underline inline-flex items-center gap-1"
-            >
-              See all of today's ideas <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
 
           <div className="space-y-2.5">
-            {isTodayLoading ? (
+            {isFreshLoading ? (
               Array.from({ length: 6 }).map((_, i) => <IdeaRowSkeleton key={i} />)
             ) : todayIdeas.length === 0 ? (
               <div className="p-8 text-center rounded-[12px] border border-dashed border-border bg-surface text-sm text-ink-muted">
-                No ideas posted today yet.{' '}
+                Be the first to post an idea and get real feedback.{' '}
                 <Link to="/submit" className="text-accent-strong font-semibold hover:underline">
-                  Post the first idea!
+                  Post an idea
                 </Link>
               </div>
             ) : (
@@ -179,8 +170,6 @@ export function LandingPage() {
                 <IdeaRow
                   key={idea.id}
                   idea={idea}
-                  rank={index + 1}
-                  showRank={true}
                   isFocused={focusedRowIndex === index}
                   headingTag="h3"
                 />
@@ -190,43 +179,13 @@ export function LandingPage() {
 
           {todayIdeas.length > 0 && (
             <div className="pt-2 text-center">
-              <Link to="/feed">
+              <Link to="/feed?sort=newest">
                 <Button variant="secondary" size="default" className="w-full sm:w-auto px-6 h-11 text-sm font-semibold rounded-[8px]">
-                  See all of today's ideas <ArrowRight className="w-4 h-4 ml-1.5" />
+                  See all ideas <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               </Link>
             </div>
           )}
-        </section>
-
-        {/* Section 2: Yesterday's Top Ideas (5) */}
-        <section aria-labelledby="yesterday-heading" className="space-y-4 pt-4 border-t border-border">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 id="yesterday-heading" className="text-base font-bold text-ink">
-                Yesterday's Top Ideas
-              </h2>
-              <p className="text-xs text-ink-muted mt-0.5">
-                Breakout concepts evaluated over the previous cycle
-              </p>
-            </div>
-            <Link
-              to="/leaderboard?timeframe=daily"
-              className="text-xs font-semibold text-ink-muted hover:text-ink hover:underline inline-flex items-center gap-1"
-            >
-              See all <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="space-y-2.5">
-            {isYesterdayLoading ? (
-              Array.from({ length: 3 }).map((_, i) => <IdeaRowSkeleton key={i} />)
-            ) : (
-              yesterdayIdeas.slice(0, 5).map((idea, index) => (
-                <IdeaRow key={idea.id} idea={idea} rank={index + 1} showRank={true} headingTag="h3" />
-              ))
-            )}
-          </div>
         </section>
 
         {/* Section 3: Last Week's Top Ideas (5) */}
@@ -234,10 +193,10 @@ export function LandingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 id="week-heading" className="text-base font-bold text-ink">
-                Last Week's Top Ideas
+                Top this week
               </h2>
               <p className="text-xs text-ink-muted mt-0.5">
-                Most thoroughly critiqued proposals across the last 7 days
+                Highest weighted score from ratings cast in the last 7 days (minimum 5 ratings)
               </p>
             </div>
             <Link
@@ -251,6 +210,13 @@ export function LandingPage() {
           <div className="space-y-2.5">
             {isWeekLoading ? (
               Array.from({ length: 3 }).map((_, i) => <IdeaRowSkeleton key={i} />)
+            ) : weekIdeas.length === 0 ? (
+              <div className="p-6 text-center rounded-[12px] border border-dashed border-border bg-surface text-sm text-ink-muted">
+                No idea has 5 ratings this week yet.{' '}
+                <Link to="/feed?sort=needs_votes" className="text-accent-strong font-semibold hover:underline">
+                  Rate ideas that need votes
+                </Link>
+              </div>
             ) : (
               weekIdeas.slice(0, 5).map((idea, index) => (
                 <IdeaRow key={idea.id} idea={idea} rank={index + 1} showRank={true} headingTag="h3" />
@@ -264,10 +230,10 @@ export function LandingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 id="month-heading" className="text-base font-bold text-ink">
-                This Month's Top Ideas
+                Top this month
               </h2>
               <p className="text-xs text-ink-muted mt-0.5">
-                Highest-rated concepts evaluated over the last 30 days
+                Same score over the last 30 days (minimum 5 ratings)
               </p>
             </div>
             <Link
@@ -281,6 +247,13 @@ export function LandingPage() {
           <div className="space-y-2.5">
             {isMonthLoading ? (
               Array.from({ length: 3 }).map((_, i) => <IdeaRowSkeleton key={i} />)
+            ) : monthIdeas.length === 0 ? (
+              <div className="p-6 text-center rounded-[12px] border border-dashed border-border bg-surface text-sm text-ink-muted">
+                No idea has 5 ratings this month yet.{' '}
+                <Link to="/feed?sort=needs_votes" className="text-accent-strong font-semibold hover:underline">
+                  Rate ideas that need votes
+                </Link>
+              </div>
             ) : (
               monthIdeas.slice(0, 5).map((idea, index) => (
                 <IdeaRow key={idea.id} idea={idea} rank={index + 1} showRank={true} headingTag="h3" />
@@ -288,6 +261,8 @@ export function LandingPage() {
             )}
           </div>
         </section>
+
+        <WaitlistCard source="weekly_email" />
 
         {/* Section 5: Trending Discussions Block (4 threads) */}
         <section aria-labelledby="discussions-heading" className="space-y-4 pt-4 border-t border-border" id="discussions">
@@ -308,9 +283,14 @@ export function LandingPage() {
             </Link>
           </div>
 
+          {discussionsList.length === 0 && (
+            <p className="p-6 text-center rounded-[12px] border border-dashed border-border bg-surface text-sm text-ink-muted">
+              No discussions yet. Open an idea and leave the first comment.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {discussionsList.map((idea) => {
-              const count = Number(idea.stats?.comments_count || 1);
+              const count = Number(idea.stats?.comments_count || 0);
               return (
                 <Link
                   key={idea.id}
@@ -373,7 +353,7 @@ export function LandingPage() {
                     </p>
                   </div>
                   <span className="text-[11px] font-medium text-ink-faint mt-3 pt-2 border-t border-border block">
-                    {cat.count}
+                    Browse {cat.name} ideas →
                   </span>
                 </Link>
               );

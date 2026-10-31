@@ -1,10 +1,10 @@
 import db from '../config/db.js';
-import { parseGithubRepo, fetchGithubRepo, GithubLookupError } from '../services/github.js';
+import { parseGithubRepo, fetchGithubRepo, GithubLookupError, licenseNote } from '../services/github.js';
 
 const REPO_SELECT = `
   SELECT
     r.id, r.full_name, r.owner_avatar, r.description, r.language, r.stars, r.forks,
-    r.topics, r.note, r.created_at,
+    r.topics, r.note, r.created_at, r.license, r.pushed_at, r.category, r.business_model,
     u.id AS sharer_id, u.name AS sharer_name, u.avatar_url AS sharer_avatar,
     (SELECT COUNT(*) FROM repo_upvotes v WHERE v.repo_id = r.id) AS upvotes,
     EXISTS(SELECT 1 FROM repo_upvotes v WHERE v.repo_id = r.id AND v.user_id = ?) AS has_upvoted
@@ -25,6 +25,11 @@ function formatRepo(r) {
     topics: JSON.parse(r.topics || '[]'),
     note: r.note,
     created_at: r.created_at,
+    license: r.license,
+    license_note: licenseNote(r.license),
+    pushed_at: r.pushed_at,
+    category: r.category,
+    business_model: r.business_model,
     shared_by: {
       id: r.sharer_id,
       name: r.sharer_name,
@@ -42,7 +47,7 @@ async function loadRepo(id, viewerId) {
 
 export async function getRepos(req, res, next) {
   try {
-    const { page, limit, search, sort } = req.query;
+    const { page, limit, search, sort, category, license } = req.query;
     const offset = (page - 1) * limit;
     const viewerId = req.user?.id || null;
 
@@ -53,11 +58,19 @@ export async function getRepos(req, res, next) {
       const term = `%${search}%`;
       params.push(term, term, term, term, term);
     }
+    if (category) {
+      conditions.push('LOWER(r.category) = LOWER(?)');
+      params.push(category);
+    }
+    if (license) {
+      conditions.push('UPPER(r.license) = UPPER(?)');
+      params.push(license);
+    }
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const orderBy = sort === 'newest'
       ? 'r.created_at DESC, r.id DESC'
-      : 'upvotes DESC, r.created_at DESC, r.id DESC';
+      : 'upvotes DESC, r.stars DESC, r.created_at DESC, r.id DESC';
 
     const countRow = await db.prepare(`SELECT COUNT(*) AS total FROM shared_repos r ${whereClause}`).get(...params);
     const total = Number(countRow?.total || 0);
@@ -111,8 +124,8 @@ export async function shareRepo(req, res, next) {
 
     const result = await db.prepare(`
       INSERT INTO shared_repos
-        (user_id, github_id, full_name, owner_avatar, description, language, stars, forks, topics, note)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, github_id, full_name, owner_avatar, description, language, stars, forks, topics, note, license, pushed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       details.github_id,
@@ -123,7 +136,9 @@ export async function shareRepo(req, res, next) {
       details.stars,
       details.forks,
       JSON.stringify(details.topics),
-      req.body.note || null
+      req.body.note || null,
+      details.license,
+      details.pushed_at
     );
 
     res.status(201).json({
@@ -189,6 +204,28 @@ export async function deleteRepo(req, res, next) {
     await db.prepare('DELETE FROM shared_repos WHERE id = ?').run(repo.id);
 
     res.json({ success: true, message: 'Repository removed.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getRepoFacets(req, res, next) {
+  try {
+    const categories = await db.prepare(`
+      SELECT category AS name, COUNT(*) AS count FROM shared_repos
+      WHERE category IS NOT NULL GROUP BY category ORDER BY count DESC, name ASC
+    `).all();
+    const licenses = await db.prepare(`
+      SELECT license AS name, COUNT(*) AS count FROM shared_repos
+      WHERE license IS NOT NULL GROUP BY license ORDER BY count DESC, name ASC
+    `).all();
+    res.json({
+      success: true,
+      data: {
+        categories: categories.map((c) => ({ name: c.name, count: Number(c.count) })),
+        licenses: licenses.map((l) => ({ name: l.name, count: Number(l.count) }))
+      }
+    });
   } catch (err) {
     next(err);
   }

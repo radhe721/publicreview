@@ -10,6 +10,7 @@ import { RatingBreakdown } from '@/components/rating-breakdown';
 import { StarRatingWidget } from '@/components/star-rating-widget';
 import { CommentSection } from '@/components/comment-section';
 import { DemandSignalPanel } from '@/components/demand-signal-panel';
+import { StructuredFeedback } from '@/components/structured-feedback';
 import { ReportModal } from '@/components/report-modal';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { Button } from '@/components/ui/button';
@@ -84,16 +85,29 @@ export function IdeaDetailPage() {
     }
   };
 
+  const shareUrl = `${window.location.origin}/ideas/${id}`;
+  const shareText = `Would you pay for this? Vote here: ${idea?.title}`;
+
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: idea?.title,
-        text: idea?.pitch,
-        url: window.location.href,
-      }).catch(() => null);
+      navigator.share({ title: idea?.title, text: shareText, url: shareUrl }).catch(() => null);
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard.');
+      navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      toast.success('Share message copied: "Would you pay for this? Vote here."');
+    }
+  };
+
+  const [isTogglingSeed, setIsTogglingSeed] = useState(false);
+  const toggleTeamSeed = async () => {
+    setIsTogglingSeed(true);
+    try {
+      await api.patch(`/ideas/${id}/team-seed`, { is_team_seed: !idea.is_team_seed });
+      toast.success(idea.is_team_seed ? 'Team seed label removed.' : 'Labelled as posted by BusinessListe Team.');
+      queryClient.invalidateQueries(['idea-detail', id]);
+    } catch (err) {
+      toast.error(err.message || 'Could not change the label.');
+    } finally {
+      setIsTogglingSeed(false);
     }
   };
 
@@ -166,10 +180,23 @@ export function IdeaDetailPage() {
                   <CategoryBadge category={idea.category} clickable />
                   <span className="text-ink-faint select-none">•</span>
                   <span>Posted {formatDate(idea.created_at)}</span>
-                  {idea.author?.name && (
+                  {idea.author?.is_team ? (
+                    <>
+                      <span className="text-ink-faint select-none">•</span>
+                      <span className="font-semibold text-ink">Posted by BusinessListe Team</span>
+                    </>
+                  ) : idea.author?.name && (
                     <>
                       <span className="text-ink-faint select-none">•</span>
                       <span>by <Link to={`/profile/${idea.author.id}`} className="font-semibold text-ink hover:underline">{idea.author.name}</Link></span>
+                    </>
+                  )}
+                  {idea.stats?.needs_votes && (
+                    <>
+                      <span className="text-ink-faint select-none">•</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-accent-soft text-accent-strong font-semibold">
+                        New, needs {idea.stats.votes_to_rank} more {idea.stats.votes_to_rank === 1 ? 'vote' : 'votes'} to rank
+                      </span>
                     </>
                   )}
                 </div>
@@ -193,7 +220,7 @@ export function IdeaDetailPage() {
                 className="flex-1 sm:flex-none h-11 px-5 rounded-[8px] gap-2 text-sm font-semibold"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Rate it ({avgScore})</span>
+                <span>{idea.stats?.needs_votes ? `Rate it (${totalRatings}/5)` : `Rate it (${avgScore})`}</span>
               </Button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -227,6 +254,18 @@ export function IdeaDetailPage() {
                       <Edit2 className="w-3 h-3" /> Edit
                     </Button>
                   </Link>
+                  {isAdmin && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={toggleTeamSeed}
+                      isLoading={isTogglingSeed}
+                      className="h-8 text-xs rounded-[8px] px-2.5"
+                      title="Label this idea as posted by the BusinessListe team"
+                    >
+                      {idea.is_team_seed ? 'Unmark team seed' : 'Mark team seed'}
+                    </Button>
+                  )}
                   <Button
                     variant="danger"
                     size="sm"
@@ -239,6 +278,20 @@ export function IdeaDetailPage() {
               )}
             </div>
           </div>
+        </section>
+
+        {/* Demand box: the hero of the page, right under the title */}
+        <section aria-labelledby="demand-heading" className="space-y-4">
+          <h2 id="demand-heading" className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            Would people pay for it?
+          </h2>
+          <DemandSignalPanel
+            ideaId={idea.id}
+            ideaTitle={idea.title}
+            isAuthor={isAuthor}
+            isAuthenticated={isAuthenticated}
+            canViewWaitlist={canManage}
+          />
         </section>
 
         {/* Tab Bar: Overview, Comments, Ratings */}
@@ -309,11 +362,13 @@ export function IdeaDetailPage() {
                   </p>
                 </div>
               </div>
-              <Link to={`/profile/${idea.author?.id}`}>
-                <Button variant="secondary" size="sm" className="rounded-[8px] text-xs h-9">
-                  View profile
-                </Button>
-              </Link>
+              {!idea.author?.is_team && (
+                <Link to={`/profile/${idea.author?.id}`}>
+                  <Button variant="secondary" size="sm" className="rounded-[8px] text-xs h-9">
+                    View profile
+                  </Button>
+                </Link>
+              )}
             </section>
 
             {/* Rating Breakdown Section */}
@@ -343,18 +398,12 @@ export function IdeaDetailPage() {
               </div>
             </section>
 
-            {/* Demand Validation: would people actually use / pay for it? */}
+            {/* Structured feedback: four quick questions */}
             <section className="space-y-4">
               <h2 className="text-xs font-bold uppercase tracking-wider text-ink-muted">
-                Market Demand
+                Structured Feedback
               </h2>
-              <DemandSignalPanel
-                ideaId={idea.id}
-                ideaTitle={idea.title}
-                isAuthor={isAuthor}
-                isAuthenticated={isAuthenticated}
-                canViewWaitlist={canManage}
-              />
+              <StructuredFeedback ideaId={idea.id} isAuthor={isAuthor} isAuthenticated={isAuthenticated} />
             </section>
           </div>
         )}

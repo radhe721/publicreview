@@ -26,6 +26,7 @@ const ForgotPasswordPage = React.lazy(() => import('./pages/forgot-password-page
 const ResetPasswordPage = React.lazy(() => import('./pages/reset-password-page').then((m) => ({ default: m.ResetPasswordPage })));
 const AdminModerationPage = React.lazy(() => import('./pages/admin-moderation-page').then((m) => ({ default: m.AdminModerationPage })));
 const AdminWaitlistPage = React.lazy(() => import('./pages/admin-waitlist-page').then((m) => ({ default: m.AdminWaitlistPage })));
+const AboutPage = React.lazy(() => import('./pages/about-page').then((m) => ({ default: m.AboutPage })));
 const NotFoundPage = React.lazy(() => import('./pages/not-found-page').then((m) => ({ default: m.NotFoundPage })));
 
 function RouteLoadingFallback() {
@@ -108,7 +109,9 @@ export function App() {
                     <Route path="/ideas/:id/edit" element={<EditIdeaPage />} />
                     <Route path="/submit" element={<SubmitIdeaPage />} />
                     <Route path="/repos" element={<ReposPage />} />
+                    <Route path="/open-source" element={<ReposPage />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/about" element={<AboutPage />} />
                     <Route path="/profile/:id" element={<ProfilePage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />

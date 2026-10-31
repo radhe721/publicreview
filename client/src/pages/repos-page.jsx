@@ -32,6 +32,12 @@ const SORT_OPTIONS = [
 
 const NOTE_MAX = 280;
 
+const BUSINESS_MODELS = {
+  self_host: 'Free self-host only',
+  paid_cloud: 'Has paid cloud plan',
+  open_core: 'Open-core',
+};
+
 function formatCount(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 }
@@ -47,8 +53,8 @@ function ShareRepoForm({ onShared }) {
     return (
       <section className="p-5 rounded-[12px] border border-border bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-ink">Found a great repo?</h2>
-          <p className="text-sm text-ink-muted mt-0.5">Sign in to share it with the community.</p>
+          <h2 className="text-base font-bold text-ink">Know an open-source SaaS?</h2>
+          <p className="text-sm text-ink-muted mt-0.5">Sign in and paste the GitHub link. Stars, license and description are pulled in automatically.</p>
         </div>
         <Link to="/login">
           <Button size="sm" className="px-4">Sign in to share</Button>
@@ -210,7 +216,20 @@ function RepoRow({ repo, onChanged }) {
           </blockquote>
         )}
 
+        {(repo.category || repo.business_model) && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+            {repo.category && <span className="px-2 py-0.5 rounded-full bg-accent-soft text-accent-strong">{repo.category}</span>}
+            {repo.business_model && <span className="px-2 py-0.5 rounded-full bg-success-soft text-success">{BUSINESS_MODELS[repo.business_model] || repo.business_model}</span>}
+          </div>
+        )}
+
+        <p className="text-xs text-ink-muted">
+          <span className="font-semibold text-ink">License: {repo.license && repo.license !== 'NOASSERTION' ? repo.license : 'custom / unclear'}.</span>{' '}
+          {repo.license_note}
+        </p>
+
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+          {repo.pushed_at && <span>Last commit {formatRelativeTime(repo.pushed_at)}</span>}
           {repo.language && <span className="font-medium text-ink">{repo.language}</span>}
           <span className="inline-flex items-center gap-1 tabular-nums" title={`${repo.stars.toLocaleString()} stars`}>
             <Star className="w-3.5 h-3.5" /> {formatCount(repo.stars)}
@@ -274,6 +293,16 @@ export function ReposPage() {
   const currentSort = searchParams.get('sort') === 'newest' ? 'newest' : 'top';
   const currentPage = Number(searchParams.get('page') || 1);
   const currentSearch = searchParams.get('search') || '';
+  const currentCategory = searchParams.get('category') || '';
+  const currentLicense = searchParams.get('license') || '';
+
+  const { data: facetsData } = useQuery({
+    queryKey: ['repo-facets'],
+    queryFn: () => api.get('/repos/facets'),
+    staleTime: 1000 * 60 * 5,
+  });
+  const categories = facetsData?.data?.categories || [];
+  const licenses = facetsData?.data?.licenses || [];
 
   const [searchInput, setSearchInput] = useState(currentSearch);
 
@@ -303,7 +332,7 @@ export function ReposPage() {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: ['repos', currentSort, currentPage, currentSearch],
+    queryKey: ['repos', currentSort, currentPage, currentSearch, currentCategory, currentLicense],
     queryFn: () => {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -311,6 +340,8 @@ export function ReposPage() {
         sort: currentSort,
       });
       if (currentSearch) params.set('search', currentSearch);
+      if (currentCategory) params.set('category', currentCategory);
+      if (currentLicense) params.set('license', currentLicense);
       return api.get(`/repos?${params.toString()}`);
     },
   });
@@ -327,10 +358,10 @@ export function ReposPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-                GitHub Repos
+                Open-Source SaaS
               </h1>
               <p className="text-sm text-ink-muted mt-1">
-                Useful open-source projects shared and upvoted by the community.
+                Open-source products that already exist, and that you can build a business on.
               </p>
             </div>
 
@@ -344,7 +375,7 @@ export function ReposPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search repos, topics, languages..."
+                placeholder="Search projects, topics, languages..."
                 className="pl-9 pr-9 rounded-[8px] h-10 text-xs bg-surface border-border-strong text-ink placeholder:text-ink-faint focus:border-accent-strong"
               />
               {searchInput && (
@@ -361,11 +392,41 @@ export function ReposPage() {
           </div>
         </div>
 
+        <p className="text-xs text-ink-muted p-3 rounded-[8px] border border-border bg-surface">
+          <strong className="text-ink">Check the license before building a business on any of these.</strong>{' '}
+          Permissive licenses (MIT, Apache) allow almost anything; AGPL means you must share your changes if you run it as a service.
+        </p>
+
         <ShareRepoForm onShared={refresh} />
+
+        {(categories.length > 0 || licenses.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label htmlFor="repo-category" className="sr-only">Category</label>
+            <select
+              id="repo-category"
+              value={currentCategory}
+              onChange={(e) => updateParam('category', e.target.value)}
+              className="h-9 px-2 rounded-[8px] border border-border bg-surface text-ink"
+            >
+              <option value="">All categories</option>
+              {categories.map((c) => <option key={c.name} value={c.name}>{c.name} ({c.count})</option>)}
+            </select>
+            <label htmlFor="repo-license" className="sr-only">License</label>
+            <select
+              id="repo-license"
+              value={currentLicense}
+              onChange={(e) => updateParam('license', e.target.value)}
+              className="h-9 px-2 rounded-[8px] border border-border bg-surface text-ink"
+            >
+              <option value="">All licenses</option>
+              {licenses.map((l) => <option key={l.name} value={l.name}>{l.name === 'NOASSERTION' ? 'Custom' : l.name} ({l.count})</option>)}
+            </select>
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-3 pb-2 border-b border-border">
           <p className="text-xs text-ink-muted">
-            <span className="font-bold text-ink tabular-nums">{pagination.total}</span> repos shared
+            <span className="font-bold text-ink tabular-nums">{pagination.total}</span> projects
           </p>
           <div className="inline-flex p-1 rounded-[8px] border border-border bg-surface text-xs font-semibold shrink-0">
             {SORT_OPTIONS.map((s) => {
@@ -398,11 +459,11 @@ export function ReposPage() {
                 <Github className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-lg text-ink">No repos found</h2>
+                <h2 className="font-bold text-lg text-ink">No projects found</h2>
                 <p className="text-sm text-ink-muted mt-1 max-w-sm mx-auto leading-relaxed">
                   {currentSearch
-                    ? `No repos match "${currentSearch}".`
-                    : 'Nobody has shared a repo yet. Be the first!'}
+                    ? `No projects match "${currentSearch}".`
+                    : 'Be the first to share an open-source SaaS: paste its GitHub link above.'}
                 </p>
               </div>
               {currentSearch && (
