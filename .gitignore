@@ -39,3 +39,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Deploy key created for Claude Code deploys (never commit)
+businessliste_deploy_ed25519
+businessliste_deploy_ed25519.pub
