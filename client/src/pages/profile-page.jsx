@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils';
 import { ExternalLink, FileText, Star, MessageSquare, BadgeCheck, Award } from 'lucide-react';
 import { mrrText, MRR_LABELS } from '@/components/idea-panels';
+import { ConnectAccounts, XIcon, LinkedInIcon } from '@/components/oauth-buttons';
+import { useSearchParams } from 'react-router-dom';
 
 const ROLE_OPTIONS = ['founder', 'freelancer', 'developer', 'agency_owner', 'marketer', 'designer', 'operator', 'student', 'other'];
 
@@ -97,6 +99,11 @@ export function ProfilePage() {
   const { id } = useParams();
   const { user: currentUser, refreshUser } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const linkedNow = searchParams.get('linked');
+  React.useEffect(() => {
+    if (linkedNow) toast.success(`${linkedNow === 'x' ? 'X' : 'LinkedIn'} connected. Your profile shows it as verified.`);
+  }, [linkedNow]);
   const [activeTab, setActiveTab] = useState('ideas');
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
@@ -211,6 +218,12 @@ export function ProfilePage() {
                       <BadgeCheck className="w-3 h-3" /> Verified revenue
                     </span>
                   )}
+                  {rep.linked?.map((l) => (
+                    <span key={l.provider} className="px-2 py-0.5 rounded-full bg-surface-muted border border-border text-ink inline-flex items-center gap-1">
+                      {l.provider === 'x' ? <XIcon /> : <LinkedInIcon />}
+                      {l.provider === 'x' ? `X verified${l.username ? ` @${l.username}` : ''}` : 'LinkedIn verified'}
+                    </span>
+                  ))}
                   {rep.badges.map((b) => (
                     <span key={b.id} className="px-2 py-0.5 rounded-full bg-surface-muted border border-border text-ink">{b.label}</span>
                   ))}
@@ -219,6 +232,19 @@ export function ProfilePage() {
             </div>
           </div>
 
+          {isOwnProfile && (
+            <ConnectAccounts
+              linked={rep?.linked || []}
+              redirectPath={`/profile/${id}`}
+              onUnlinked={async (provider) => {
+                try {
+                  await api.delete(`/linked-accounts/${provider}`);
+                  queryClient.invalidateQueries(['user-rep', id]);
+                  toast.success('Disconnected.');
+                } catch (err) { toast.error(err.message); }
+              }}
+            />
+          )}
           {isOwnProfile && (
             <ProfileEditor
               user={user}

@@ -16,9 +16,9 @@ router.get('/me', optionalAuth, getMe);
 router.post('/forgot-password', passwordResetLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 
-// OAuth (Google, GitHub)
+// OAuth (Google, GitHub, X, LinkedIn)
 router.get('/providers', getProviders);
-router.get('/oauth/:provider', oauthLimiter, validate(oauthProviderSchema, 'params'), startOAuth);
+router.get('/oauth/:provider', oauthLimiter, optionalAuth, validate(oauthProviderSchema, 'params'), startOAuth);
 router.get('/oauth/:provider/callback', oauthLimiter, validate(oauthProviderSchema, 'params'), oauthCallback);
 
 export default router;

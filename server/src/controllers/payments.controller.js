@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { PRODUCTS, paymentsEnabled, createCheckoutSession, verifyStripeSignature } from '../services/payments.js';
 import { getDemandSummary } from './demand.controller.js';
 import { notify } from '../services/notify.js';
+import { notifyTargetedRaters } from './ideaExtras.controller.js';
 
 export const REPORT_DAYS = 7;
 export const REPORT_TARGET_VOTES = 25;
@@ -46,6 +47,7 @@ export async function startReport(ideaId, purchaseId = null) {
   await db.prepare(`UPDATE ideas SET boosted_until = datetime('now', '+${REPORT_DAYS} days') WHERE id = ?`).run(ideaId);
   const idea = await db.prepare('SELECT user_id, title FROM ideas WHERE id = ?').get(ideaId);
   await notify(idea.user_id, 'report', `Your Validation Report for "${idea.title}" has started`, `/ideas/${ideaId}/report`);
+  await notifyTargetedRaters(ideaId);
   return result.lastInsertRowid;
 }
 

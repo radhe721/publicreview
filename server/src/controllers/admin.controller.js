@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { seedRepos } from '../db/seed-repos.js';
 
 // Votes held by burst detection, newest first, so an admin can release or delete them.
 export async function getHeldVotes(req, res, next) {
@@ -135,4 +136,18 @@ export async function resolveContentReport(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+// Adds the curated open-source SaaS list (never deletes; skips what is already there).
+export async function runRepoSeed(req, res, next) {
+  try {
+    const result = await seedRepos({ log: () => {} });
+    res.json({
+      success: true,
+      data: result,
+      message: result.rate_limited
+        ? `Added ${result.added}. GitHub's hourly limit was reached; press again in an hour to add the rest.`
+        : `Added ${result.added}. ${result.total} projects in total.`
+    });
+  } catch (err) { next(err); }
 }

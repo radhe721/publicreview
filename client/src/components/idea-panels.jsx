@@ -335,6 +335,7 @@ export function FounderTools({ idea }) {
           )}
         </div>
         <div className="space-y-1 pt-3 border-t border-border text-xs text-ink-muted">
+          {isPro && <TargetingForm idea={idea} />}
           {isPro ? (
             <p className="flex flex-wrap gap-3">
               <Link to={`/ideas/${idea.id}/analytics`} className="text-accent-strong font-semibold hover:underline inline-flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5" /> Analytics</Link>
@@ -346,6 +347,40 @@ export function FounderTools({ idea }) {
         </div>
       </div>
     </Panel>
+  );
+}
+
+const TARGET_ROLES = ['founder', 'freelancer', 'developer', 'agency_owner', 'marketer', 'designer', 'operator', 'student'];
+const ROLE_NAMES = { founder: 'Founders', freelancer: 'Freelancers', developer: 'Developers', agency_owner: 'Agency owners', marketer: 'Marketers', designer: 'Designers', operator: 'Operators', student: 'Students' };
+
+// Pro: choose which raters see this idea first (and get one notification).
+function TargetingForm({ idea }) {
+  const [roles, setRoles] = useState(idea.target_roles || []);
+  const [industry, setIndustry] = useState(idea.target_industry || '');
+  const [busy, setBusy] = useState(false);
+  const save = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const res = await api.put(`/ideas/${idea.id}/targeting`, { target_roles: roles, target_industry: industry.trim() || null });
+      toast.success(`Saved. ${res.data.notified} matching raters were notified.`);
+    } catch (err) { toast.error(err.message); } finally { setBusy(false); }
+  };
+  return (
+    <form onSubmit={save} className="space-y-2 pb-3 mb-3 border-b border-border">
+      <p className="font-semibold text-ink text-sm">Targeted raters</p>
+      <p>Show this idea first to these raters:</p>
+      <div className="flex flex-wrap gap-1.5">
+        {TARGET_ROLES.map((r) => (
+          <label key={r} className="inline-flex items-center gap-1 px-2 h-7 rounded-full border border-border cursor-pointer">
+            <input type="checkbox" checked={roles.includes(r)} onChange={(e) => setRoles(e.target.checked ? [...roles, r] : roles.filter((x) => x !== r))} className="w-3 h-3" />
+            {ROLE_NAMES[r]}
+          </label>
+        ))}
+      </div>
+      <Input value={industry} onChange={(e) => setIndustry(e.target.value)} maxLength={60} placeholder="Industry, e.g. Healthcare" aria-label="Target industry" className="h-9 text-xs" />
+      <Button type="submit" size="sm" variant="secondary" isLoading={busy} className="rounded-[8px]">Save targeting</Button>
+    </form>
   );
 }
 

@@ -6,7 +6,8 @@ const OAUTH_ERRORS = {
   oauth_unavailable: 'That sign-in method is not available right now.',
   oauth_cancelled: 'Sign-in was cancelled.',
   oauth_state: 'Your sign-in session expired. Please try again.',
-  oauth_email_unverified: 'Your account needs a verified email address to sign in.',
+  oauth_email_unverified: 'That account did not share a verified email address. Sign in another way, then connect it from your profile.',
+  oauth_identity_taken: 'That account is already connected to a different BusinessListe user.',
   oauth_account_conflict: 'This BusinessListe account is already linked to a different account with that provider.',
   oauth_failed: 'We could not complete sign-in. Please try again.',
 };
@@ -34,9 +35,27 @@ function GitHubIcon() {
   );
 }
 
+export function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden="true">
+      <path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z" />
+    </svg>
+  );
+}
+
+export function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+      <path fill="#0A66C2" d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
+    </svg>
+  );
+}
+
 const PROVIDERS = [
   { id: 'google', label: 'Continue with Google', Icon: GoogleIcon },
   { id: 'github', label: 'Continue with GitHub', Icon: GitHubIcon },
+  { id: 'x', label: 'Continue with X', Icon: XIcon },
+  { id: 'linkedin', label: 'Continue with LinkedIn', Icon: LinkedInIcon },
 ];
 
 export function OAuthButtons({ redirectPath = '/feed' }) {
@@ -72,6 +91,31 @@ export function OAuthButtons({ redirectPath = '/feed' }) {
         <span>or with email</span>
         <span className="h-px flex-1 bg-border" />
       </div>
+    </div>
+  );
+}
+
+// Profile: connect X / LinkedIn for a "verified" badge.
+export function ConnectAccounts({ linked = [], redirectPath, onUnlinked }) {
+  const { data } = useQuery({ queryKey: ['auth-providers'], queryFn: () => api.get('/auth/providers'), staleTime: 1000 * 60 * 10 });
+  const items = [
+    { id: 'x', label: 'X', Icon: XIcon },
+    { id: 'linkedin', label: 'LinkedIn', Icon: LinkedInIcon },
+  ].filter((p) => data?.data?.providers?.[p.id] || linked.some((l) => l.provider === p.id));
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="text-ink-muted">Verified accounts:</span>
+      {items.map(({ id, label, Icon }) => linked.some((l) => l.provider === id) ? (
+        <button key={id} type="button" onClick={() => onUnlinked(id)} className="h-8 px-3 rounded-[8px] border border-border inline-flex items-center gap-1.5 hover:border-danger" title="Disconnect">
+          <Icon /> {label} connected · disconnect
+        </button>
+      ) : (
+        <a key={id} href={`${API_HOST}/api/v1/auth/oauth/${id}?link=1&redirect=${encodeURIComponent(redirectPath)}`}
+          className="h-8 px-3 rounded-[8px] border border-border-strong inline-flex items-center gap-1.5 hover:bg-surface-hover">
+          <Icon /> Connect {label}
+        </a>
+      ))}
     </div>
   );
 }

@@ -47,6 +47,10 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
+  X_CLIENT_ID: process.env.X_CLIENT_ID || '',
+  X_CLIENT_SECRET: process.env.X_CLIENT_SECRET || '',
+  LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || '',
+  LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || '',
   // Optional token for looking up shared repos (raises GitHub's limit from 60 to 5,000 lookups/hour).
   GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
   // Transactional email (password reset). Without a key, dev logs emails to the console.

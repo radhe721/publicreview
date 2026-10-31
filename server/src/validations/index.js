@@ -23,7 +23,7 @@ export const resetPasswordSchema = z.object({
 });
 
 export const oauthProviderSchema = z.object({
-  provider: z.enum(['google', 'github'])
+  provider: z.enum(['google', 'github', 'x', 'linkedin'])
 });
 
 export const demandSignalSchema = z.object({
@@ -196,4 +196,9 @@ export const grantSchema = z.object({
   product: z.enum(['report', 'pro']),
   user_id: z.number().int().positive().optional(),
   idea_id: z.number().int().positive().optional()
+});
+
+export const targetingSchema = z.object({
+  target_roles: z.array(z.enum(ROLE_TAGS)).max(9).optional().default([]),
+  target_industry: z.string().trim().max(60).optional().nullable()
 });

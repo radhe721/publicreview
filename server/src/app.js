@@ -55,7 +55,7 @@ app.use(helmet({
         'https://*.analytics.google.com',
         'https://*.googletagmanager.com'
       ],
-      formAction: ["'self'", 'https://accounts.google.com', 'https://github.com'],
+      formAction: ["'self'", 'https://accounts.google.com', 'https://github.com', 'https://x.com', 'https://twitter.com', 'https://www.linkedin.com'],
       frameAncestors: ["'none'"]
     }
   }

@@ -9,6 +9,7 @@ export const NOTIFICATION_TYPES = {
   milestone: { label: 'My idea reached 5 ratings', inapp: true, email: true },
   build_interest: { label: 'Someone wants to build my idea', inapp: true, email: true },
   report: { label: 'Validation Report updates', inapp: true, email: true },
+  targeted: { label: 'Ideas looking for raters like me', inapp: true, email: false },
   weekly: { label: 'Weekly email: top validated ideas', inapp: false, email: true }
 };
 

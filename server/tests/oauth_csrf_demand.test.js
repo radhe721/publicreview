@@ -138,7 +138,7 @@ describe('OAuth sign-in (Google & GitHub)', () => {
 
   test('providers endpoint reports configured providers', async () => {
     const res = await request(app).get('/api/v1/auth/providers');
-    assert.deepStrictEqual(res.body.data.providers, { google: true, github: true });
+    assert.deepStrictEqual(res.body.data.providers, { google: true, github: true, x: false, linkedin: false });
   });
 
   test('Google start redirects with state and PKCE S256 challenge', async () => {

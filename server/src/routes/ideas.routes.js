@@ -12,7 +12,7 @@ import { voteLimiter, ideaPostLimiter } from '../middleware/rateLimiter.js';
 import {
   similarTitles, similarIdeas, relatedRepos, getRevisions, myDrafts, trackView, getAnalytics,
   getBuilders, setBuildInterest, removeBuildInterest, markFeedbackHelpful, markLaunched, removeLaunch,
-  verifyRevenue, listLaunches, getLanding, landingSignup, landingSignups
+  verifyRevenue, listLaunches, getLanding, landingSignup, landingSignups, setTargeting
 } from '../controllers/ideaExtras.controller.js';
 import { getIdeaReport } from '../controllers/payments.controller.js';
 import { toggleCommentUpvote } from '../controllers/community.controller.js';
@@ -47,13 +47,14 @@ import {
   launchSchema,
   verifyRevenueSchema,
   buildInterestSchema,
-  landingSignupSchema
+  landingSignupSchema,
+  targetingSchema
 } from '../validations/index.js';
 
 const router = Router();
 
 // Ideas Endpoints (fixed paths before /:id)
-router.get('/', validate(paginationQuerySchema, 'query'), getIdeas);
+router.get('/', optionalAuth, validate(paginationQuerySchema, 'query'), getIdeas);
 router.get('/similar-titles', similarTitles);
 router.get('/drafts/mine', requireAuth, myDrafts);
 router.get('/launches', listLaunches);
@@ -98,6 +99,8 @@ router.post('/:id/feedback/:userId/helpful', requireAuth, markFeedbackHelpful);
 router.put('/:id/launch', requireAuth, validate(launchSchema), markLaunched);
 router.delete('/:id/launch', requireAuth, removeLaunch);
 router.post('/:id/verify-revenue', requireAuth, voteLimiter, validate(verifyRevenueSchema), verifyRevenue);
+
+router.put('/:id/targeting', requireAuth, validate(targetingSchema), setTargeting);
 
 // Pro fake-door landing page
 router.get('/:id/landing', getLanding);

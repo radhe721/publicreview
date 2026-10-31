@@ -2,7 +2,8 @@
 // account. Safe to run on any database, production included: it never deletes anything, skips repos that
 // are already shared, and takes stars, license and description live from the GitHub API (nothing invented).
 //
-// Usage: npm run seed:repos --prefix server   (set GITHUB_TOKEN to avoid GitHub's 60 lookups/hour limit)
+// Usage: npm run seed:repos --prefix server   (add -- --refresh to update stars of existing ones;
+// set GITHUB_TOKEN to avoid GitHub's 60 lookups/hour limit). Admins can also run it from /admin.
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
@@ -54,19 +55,34 @@ async function getTeamUserId() {
   return result.lastInsertRowid;
 }
 
-export async function seedRepos({ log = console.log } = {}) {
+export async function seedRepos({ log = console.log, refresh = false } = {}) {
   await runMigrations();
   const teamId = await getTeamUserId();
   let added = 0;
   let updated = 0;
+  let skipped = 0;
   const failed = [];
+  let rateLimited = false;
 
   for (const entry of SEED_REPOS) {
     const [owner, name] = entry.repo.split('/');
+    // Already seeded by name: skip the GitHub call, so a re-run after a rate limit only fetches what is missing.
+    const known = await db.prepare('SELECT id FROM shared_repos WHERE LOWER(full_name) = LOWER(?)').get(entry.repo);
+    if (known && !refresh) {
+      await db.prepare('UPDATE shared_repos SET category = COALESCE(category, ?), business_model = COALESCE(business_model, ?) WHERE id = ?')
+        .run(entry.category, entry.business_model, known.id);
+      skipped++;
+      continue;
+    }
+    if (rateLimited) {
+      failed.push(`${entry.repo}: waiting for GitHub rate limit`);
+      continue;
+    }
     let details;
     try {
       details = await fetchGithubRepo({ owner, name });
     } catch (err) {
+      if (err instanceof GithubLookupError && err.statusCode === 503) rateLimited = true;
       failed.push(`${entry.repo}: ${err instanceof GithubLookupError ? err.message : err}`);
       continue;
     }
@@ -97,14 +113,18 @@ export async function seedRepos({ log = console.log } = {}) {
     log(`  + ${details.full_name} (${details.stars}★, ${details.license || 'no license'})`);
   }
 
-  log(`Open-Source SaaS seed: ${added} added, ${updated} refreshed, ${failed.length} failed.`);
+  log(`Open-Source SaaS seed: ${added} added, ${updated} refreshed, ${skipped} already there, ${failed.length} not done.`);
   for (const f of failed) log(`  ! ${f}`);
-  return { added, updated, failed };
+  if (rateLimited) {
+    log('GitHub rate limit reached (60 lookups/hour without a token). Set GITHUB_TOKEN or run this again in an hour; it continues where it stopped.');
+  }
+  const total = await db.prepare('SELECT COUNT(*) AS n FROM shared_repos').get();
+  return { added, updated, skipped, failed, rate_limited: rateLimited, total: Number(total.n) };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    await seedRepos();
+    await seedRepos({ refresh: process.argv.includes('--refresh') });
     process.exit(0);
   } catch (err) {
     console.error('Repo seed failed:', err);

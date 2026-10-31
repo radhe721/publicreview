@@ -379,3 +379,45 @@ export async function landingSignups(req, res, next) {
     res.json({ success: true, data: { signups: rows } });
   } catch (err) { next(err); }
 }
+
+// Pro targeted raters: who should see this idea first. Matching raters get one notification per idea.
+export async function setTargeting(req, res, next) {
+  try {
+    const idea = await loadIdea(req.params.id);
+    if (!idea || idea.status !== 'published') return notFound(res);
+    if (!isOwnerOrAdmin(req, idea)) return forbidden(res);
+    if (req.user.role !== 'admin' && !(await isPro(req.user.id))) {
+      return res.status(402).json({ success: false, error: { message: 'Targeted raters are part of BusinessListe Pro.', code: 'PRO_REQUIRED' } });
+    }
+    const roles = [...new Set(req.body.target_roles || [])];
+    const industry = req.body.target_industry || null;
+    await db.prepare('UPDATE ideas SET target_roles = ?, target_industry = ? WHERE id = ?')
+      .run(roles.length ? roles.join(',') : null, industry, idea.id);
+    const notified = await notifyTargetedRaters(idea.id);
+    res.json({ success: true, data: { target_roles: roles, target_industry: industry, notified } });
+  } catch (err) { next(err); }
+}
+
+export async function notifyTargetedRaters(ideaId, limit = 50) {
+  const idea = await loadIdea(ideaId);
+  if (!idea || (!idea.target_roles && !idea.target_industry)) return 0;
+  const roles = String(idea.target_roles || '').split(',').filter(Boolean);
+  const conds = [];
+  const params = [];
+  if (roles.length) { conds.push(`u.role_tag IN (${roles.map(() => '?').join(',')})`); params.push(...roles); }
+  if (idea.target_industry) { conds.push('LOWER(u.industry) = LOWER(?)'); params.push(idea.target_industry); }
+  const link = `/ideas/${idea.id}`;
+  const raters = await db.prepare(`
+    SELECT u.id FROM users u
+    WHERE (${conds.join(' OR ')})
+      AND u.id != ?
+      AND NOT EXISTS (SELECT 1 FROM demand_signals d WHERE d.idea_id = ? AND d.user_id = u.id)
+      AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.type = 'targeted' AND n.link = ?)
+    ORDER BY u.reputation DESC
+    LIMIT ?
+  `).all(...params, idea.user_id, idea.id, link, limit);
+  for (const r of raters) {
+    await notify(r.id, 'targeted', `An idea for people like you needs your vote: "${idea.title}"`, link);
+  }
+  return raters.length;
+}

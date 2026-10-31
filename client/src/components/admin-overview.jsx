@@ -133,7 +133,16 @@ export function AdminOverview() {
       </section>
 
       <section className="space-y-2 text-xs">
-        <h2 className="text-base font-bold">Newest repos</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-bold">Newest repos</h2>
+          <Button size="sm" variant="secondary" className="h-8 rounded-[8px]" onClick={async () => {
+            try {
+              const res = await api.post('/admin/seed-repos');
+              toast.success(res.message);
+              refresh();
+            } catch (err) { toast.error(err.message); }
+          }}>Add the 25 curated open-source SaaS</Button>
+        </div>
         <ul className="divide-y divide-border border border-border rounded-[8px]">
           {o.repos.map((r) => (
             <li key={r.id} className="p-2 flex items-center justify-between gap-2">

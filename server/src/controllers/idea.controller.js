@@ -23,6 +23,8 @@ function extraFields(r) {
     status: r.status || 'published',
     is_featured: Boolean(Number(r.is_featured || 0)),
     is_boosted: Boolean(Number(r.is_boosted || 0)),
+    target_roles: r.target_roles ? String(r.target_roles).split(',').filter(Boolean) : [],
+    target_industry: r.target_industry ?? null,
     launch: r.launched_url ? {
       url: r.launched_url,
       launched_at: r.launched_at,
@@ -36,6 +38,7 @@ function extraFields(r) {
 
 const EXTRA_SELECT = `
         i.problem, i.target_buyer, i.suggested_price, i.how_it_works, i.competitors, i.link_url, i.status,
+        i.target_roles, i.target_industry,
         i.launched_url, i.launched_at, i.mrr_range, i.mrr_verified_cents, i.mrr_verified_at, i.show_exact_mrr,
         (i.featured_until IS NOT NULL AND i.featured_until > datetime('now')) AS is_featured,
         (i.boosted_until IS NOT NULL AND i.boosted_until > datetime('now')) AS is_boosted,`;
@@ -107,6 +110,7 @@ export async function getIdeas(req, res, next) {
     }
 
     const normalizedSort = (sort || 'top').toLowerCase().replace(/\s+/g, '_');
+    const orderParams = [];
     // Top: ideas with enough ratings first (by weighted Bayesian score), then the rest by score.
     let orderBy = `(COALESCE(ws.n, 0) >= ${MIN_RATINGS_TO_RANK}) DESC, ranking_score DESC, COALESCE(ws.n, 0) DESC, i.created_at DESC`;
     if (normalizedSort === 'newest' || normalizedSort === 'fresh') {
@@ -122,6 +126,12 @@ export async function getIdeas(req, res, next) {
       conditions.push(`COALESCE((SELECT COUNT(*) FROM ratings rr WHERE rr.idea_id = i.id AND rr.held = 0), 0) < ${MIN_RATINGS_TO_RANK}`);
       // Ideas with a running Validation Report are shown to raters first.
       orderBy = "(i.boosted_until IS NOT NULL AND i.boosted_until > datetime('now')) DESC, i.created_at DESC, i.id DESC";
+      // Pro targeted raters: ideas aimed at the viewer's role or industry come first.
+      if (req.user && (req.user.role_tag || req.user.industry)) {
+        orderBy = `((i.target_roles IS NOT NULL AND (',' || i.target_roles || ',') LIKE ?)
+          OR (i.target_industry IS NOT NULL AND LOWER(i.target_industry) = LOWER(?))) DESC, ${orderBy}`;
+        orderParams.push(`%,${req.user.role_tag || '-'},%`, req.user.industry || '-');
+      }
     } else if (normalizedSort === 'trending') {
       // Time-decayed popularity score
       orderBy = '((COALESCE(s.total_ratings, 0) * 3.0 + COALESCE(s.avg_score, 0) * 2.0) / (MAX(1, (strftime(\'%s\', \'now\') - strftime(\'%s\', i.created_at)) / 3600.0) + 2.0)) DESC';
@@ -178,7 +188,7 @@ export async function getIdeas(req, res, next) {
       LIMIT ? OFFSET ?
     `;
 
-    const rows = await db.prepare(itemsSql).all(...params, safeLimit, offset);
+    const rows = await db.prepare(itemsSql).all(...params, ...orderParams, safeLimit, offset);
 
     const ideas = rows.map(r => ({
       id: r.id,

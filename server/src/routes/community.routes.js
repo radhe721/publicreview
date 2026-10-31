@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   listNotifications, markNotificationsRead, getNotificationPrefs, updateNotificationPrefs,
   topContributors, userReputation, userRepos, userLaunches, listCofounders, upsertCofounder, deleteCofounder,
-  search, trendingDiscussions, listRepoComments, createRepoComment, deleteRepoComment, createContentReport, unsubscribe
+  search, trendingDiscussions, unlinkAccount, listRepoComments, createRepoComment, deleteRepoComment, createContentReport, unsubscribe
 } from '../controllers/community.controller.js';
 import { ideasForRepo } from '../controllers/ideaExtras.controller.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
@@ -17,6 +17,7 @@ router.post('/notifications/read', requireAuth, markNotificationsRead);
 router.get('/notifications/prefs', requireAuth, getNotificationPrefs);
 router.put('/notifications/prefs', requireAuth, validate(notificationPrefsSchema), updateNotificationPrefs);
 
+router.delete('/linked-accounts/:provider', requireAuth, unlinkAccount);
 router.get('/contributors', topContributors);
 router.get('/users/:id/reputation', userReputation);
 router.get('/users/:id/repos', userRepos);

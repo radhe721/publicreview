@@ -57,16 +57,69 @@ const providers = {
         providerUserId: String(profile.id),
         email: primary ? primary.email : null,
         name: profile.name || profile.login,
-        avatarUrl: profile.avatar_url
+        avatarUrl: profile.avatar_url,
+        username: profile.login
+      };
+    }
+  },
+  x: {
+    clientId: () => env.X_CLIENT_ID,
+    clientSecret: () => env.X_CLIENT_SECRET,
+    usePkce: true,
+    authorizeUrl: 'https://x.com/i/oauth2/authorize',
+    authorizeParams: { scope: 'users.read tweet.read users.email' },
+    async fetchProfile(code, redirectUri, codeVerifier) {
+      // X confidential clients authenticate the token request with HTTP Basic auth.
+      const basic = Buffer.from(`${env.X_CLIENT_ID}:${env.X_CLIENT_SECRET}`).toString('base64');
+      const token = await postForm('https://api.x.com/2/oauth2/token', {
+        code,
+        grant_type: 'authorization_code',
+        client_id: env.X_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier
+      }, { Authorization: `Basic ${basic}` });
+      const me = await getJson('https://api.x.com/2/users/me?user.fields=profile_image_url,confirmed_email', token.access_token);
+      const u = me.data || {};
+      return {
+        providerUserId: String(u.id),
+        // Only an email X has confirmed; without one, X can still be linked to an existing account.
+        email: u.confirmed_email || null,
+        name: u.name || u.username,
+        avatarUrl: u.profile_image_url,
+        username: u.username
+      };
+    }
+  },
+  linkedin: {
+    clientId: () => env.LINKEDIN_CLIENT_ID,
+    clientSecret: () => env.LINKEDIN_CLIENT_SECRET,
+    usePkce: false,
+    authorizeUrl: 'https://www.linkedin.com/oauth/v2/authorization',
+    authorizeParams: { scope: 'openid profile email' },
+    async fetchProfile(code, redirectUri) {
+      const token = await postForm('https://www.linkedin.com/oauth/v2/accessToken', {
+        code,
+        grant_type: 'authorization_code',
+        client_id: env.LINKEDIN_CLIENT_ID,
+        client_secret: env.LINKEDIN_CLIENT_SECRET,
+        redirect_uri: redirectUri
+      });
+      const info = await getJson('https://api.linkedin.com/v2/userinfo', token.access_token);
+      return {
+        providerUserId: String(info.sub),
+        email: info.email_verified === true || info.email_verified === 'true' ? info.email : null,
+        name: info.name || [info.given_name, info.family_name].filter(Boolean).join(' '),
+        avatarUrl: info.picture,
+        username: null
       };
     }
   }
 };
 
-async function postForm(url, params) {
+async function postForm(url, params, extraHeaders = {}) {
   const res = await fetch(url, {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', ...extraHeaders },
     body: new URLSearchParams(params),
     signal: AbortSignal.timeout(10000)
   });
@@ -134,7 +187,9 @@ export function getProviders(req, res) {
     data: {
       providers: {
         google: isConfigured('google'),
-        github: isConfigured('github')
+        github: isConfigured('github'),
+        x: isConfigured('x'),
+        linkedin: isConfigured('linkedin')
       }
     }
   });
@@ -153,7 +208,14 @@ export function startOAuth(req, res) {
   // The state, PKCE verifier and post-login destination travel in a short-lived signed cookie,
   // so the callback can prove it was started by this browser (login CSRF protection).
   const statePayload = jwt.sign(
-    { state, cv: codeVerifier, rd: safeRedirectPath(req.query.redirect), p: provider },
+    {
+      state,
+      cv: codeVerifier,
+      rd: safeRedirectPath(req.query.redirect),
+      p: provider,
+      // "Connect account" from a signed-in profile: link this identity to the current user.
+      uid: req.query.link === '1' && req.user ? req.user.id : undefined
+    },
     env.JWT_SECRET,
     { expiresIn: STATE_TTL_SECONDS, algorithm: 'HS256' }
   );
@@ -232,8 +294,8 @@ export async function findOrCreateOAuthUser(provider, profile) {
     // UNIQUE(user_id, provider): an account already linked to a *different* identity of the same
     // provider must not silently gain a second one.
     await tx.prepare(`
-      INSERT INTO oauth_accounts (user_id, provider, provider_user_id, email) VALUES (?, ?, ?, ?)
-    `).run(userId, provider, profile.providerUserId, email);
+      INSERT INTO oauth_accounts (user_id, provider, provider_user_id, email, username) VALUES (?, ?, ?, ?, ?)
+    `).run(userId, provider, profile.providerUserId, email, profile.username || null);
 
     return tx.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   });
@@ -267,6 +329,21 @@ export async function oauthCallback(req, res) {
 
   try {
     const profile = await providers[provider].fetchProfile(req.query.code, callbackUrl(req, provider), saved.cv);
+
+    if (saved.uid) {
+      const owner = await db.prepare(`SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_user_id = ?`).get(provider, profile.providerUserId);
+      if (owner && Number(owner.user_id) !== Number(saved.uid)) {
+        return failRedirect(res, 'oauth_identity_taken');
+      }
+      if (!owner) {
+        await db.prepare(`
+          INSERT INTO oauth_accounts (user_id, provider, provider_user_id, email, username) VALUES (?, ?, ?, ?, ?)
+        `).run(saved.uid, provider, profile.providerUserId, profile.email ? profile.email.toLowerCase() : null, profile.username || null);
+      }
+      const rd = safeRedirectPath(saved.rd);
+      return redirectToClient(res, `${rd}${rd.includes('?') ? '&' : '?'}linked=${provider}`);
+    }
+
     if (!profile.email) {
       return failRedirect(res, 'oauth_email_unverified');
     }

@@ -98,7 +98,10 @@ export async function userReputation(req, res, next) {
         level: levelFor(user.reputation),
         badges: await getBadges(user.id),
         all_badges: BADGES,
-        verified_revenue: Boolean(verified)
+        verified_revenue: Boolean(verified),
+        linked: (await db.prepare(`
+          SELECT provider, username FROM oauth_accounts WHERE user_id = ? AND provider IN ('x', 'linkedin')
+        `).all(user.id)).map((a) => ({ provider: a.provider, username: a.username }))
       }
     });
   } catch (err) { next(err); }
@@ -313,4 +316,20 @@ export async function unsubscribe(req, res, next) {
 
 export function newUnsubscribeToken() {
   return crypto.randomBytes(24).toString('hex');
+}
+
+// Remove a linked X or LinkedIn account (Google/GitHub stay: they may be the only way to sign in).
+export async function unlinkAccount(req, res, next) {
+  try {
+    if (!['x', 'linkedin'].includes(req.params.provider)) {
+      return res.status(400).json({ success: false, error: { message: 'Only X and LinkedIn can be unlinked here.' } });
+    }
+    const user = await db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+    const others = await db.prepare('SELECT COUNT(*) AS n FROM oauth_accounts WHERE user_id = ? AND provider != ?').get(req.user.id, req.params.provider);
+    if (user.password_hash === '!oauth' && Number(others.n) === 0) {
+      return res.status(400).json({ success: false, error: { message: 'This is your only way to sign in, so it cannot be removed.' } });
+    }
+    await db.prepare('DELETE FROM oauth_accounts WHERE user_id = ? AND provider = ?').run(req.user.id, req.params.provider);
+    res.json({ success: true });
+  } catch (err) { next(err); }
 }
